@@ -27,7 +27,11 @@ const Login = () => {
       login(response.data.token, response.data.user);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to connect to server');
+      if (err.response) {
+        setError(`Error ${err.response.status}: ${err.response.data?.message || 'Unknown server error'}`);
+      } else {
+        setError(`Network/Proxy Error: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }

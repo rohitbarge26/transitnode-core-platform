@@ -19,6 +19,9 @@ app.use(express.json());
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[BACKEND] Received ${req.method} request to ${req.url}`);
+  res.on('finish', () => {
+    console.log(`[BACKEND] Responded with status ${res.statusCode}`);
+  });
   next();
 });
 

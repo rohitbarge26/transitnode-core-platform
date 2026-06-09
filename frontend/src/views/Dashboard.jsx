@@ -1,8 +1,27 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import IntakeDashboard from './Receptionist/IntakeDashboard';
+import BillingDashboard from './Accountant/BillingDashboard';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
+  const [stats, setStats] = useState({ activeShipments: 0, pendingInvoices: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get('/api/shipments/stats');
+        setStats(res.data);
+      } catch (err) {
+        console.error("Failed to fetch system stats:", err);
+      }
+    };
+    fetchStats();
+    // Poll for updates every 10 seconds
+    const intervalId = setInterval(fetchStats, 10000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const renderRoleSpecificContent = () => {
     switch (user?.role) {
@@ -14,19 +33,9 @@ const Dashboard = () => {
           </div>
         );
       case 'RECEPTIONIST':
-        return (
-          <div className="glass-panel" style={{ padding: '24px', marginTop: '24px' }}>
-            <h3 style={{ marginBottom: '16px', color: 'var(--accent-cyan)' }}>Intake System</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>Create new shipments and generate tracking IDs here.</p>
-          </div>
-        );
+        return <IntakeDashboard />;
       case 'ACCOUNTANT':
-        return (
-          <div className="glass-panel" style={{ padding: '24px', marginTop: '24px' }}>
-            <h3 style={{ marginBottom: '16px', color: '#4ade80' }}>Financial Ledger</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>Review pending invoices and manage payments.</p>
-          </div>
-        );
+        return <BillingDashboard />;
       default:
         return null;
     }
@@ -67,11 +76,11 @@ const Dashboard = () => {
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ background: 'rgba(0, 240, 255, 0.1)', padding: '16px', borderRadius: '8px', flex: 1 }}>
               <p style={{ fontSize: '0.875rem', color: 'var(--accent-cyan)' }}>Active Shipments</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '8px' }}>124</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '8px' }}>{stats.activeShipments}</p>
             </div>
             <div style={{ background: 'rgba(176, 38, 255, 0.1)', padding: '16px', borderRadius: '8px', flex: 1 }}>
               <p style={{ fontSize: '0.875rem', color: 'var(--accent-purple)' }}>Pending Invoices</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '8px' }}>12</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold', marginTop: '8px' }}>{stats.pendingInvoices}</p>
             </div>
           </div>
         </div>

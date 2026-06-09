@@ -1,41 +1,67 @@
-const { pool } = require('../config/db');
-
-exports.generateBill = async (req, res) => {
-  try {
-    const { shipment_id, modifiers } = req.body;
-    
-    // Fetch shipment to get estimated cost
-    const shipmentRes = await pool.query('SELECT estimated_cost FROM shipments WHERE id = $1', [shipment_id]);
-    if (shipmentRes.rows.length === 0) {
-      return res.status(404).json({ message: 'Shipment not found' });
-    }
-    
-    const baseCost = parseFloat(shipmentRes.rows[0].estimated_cost);
-    let finalAmount = baseCost;
-    
-    // Apply modifiers (e.g. express fee)
-    if (modifiers && modifiers.express) {
-      finalAmount *= 1.5;
-    }
-
-    const newInvoice = await pool.query(
-      'INSERT INTO invoices (shipment_id, final_amount, status) VALUES ($1, $2, $3) RETURNING *',
-      [shipment_id, finalAmount, 'Unpaid']
-    );
-
-    res.status(201).json({ message: 'Bill generated successfully', invoice: newInvoice.rows[0] });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error generating bill' });
-  }
-};
+const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 
 exports.getPendingInvoices = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM invoices WHERE status = $1 ORDER BY created_at DESC', ['Unpaid']);
-    res.status(200).json({ invoices: result.rows });
+    const invoices = await ShipmentLedger.find({ 
+      status: 'PENDING',
+      'accounting.paymentStatus': 'PENDING' 
+    }).sort({ 'metadata.createdAt': -1 });
+    
+    res.status(200).json({ invoices });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching pending invoices:', error);
     res.status(500).json({ message: 'Server error fetching invoices' });
+  }
+};
+
+exports.settleInvoice = async (req, res) => {
+  try {
+    const { trackingNumber } = req.params;
+    const { baseRateApplied, subtotal, fuelSurcharge, gstAmount, grandTotal, paymentMethod } = req.body;
+
+    // Validate that financial values are not negative
+    if (subtotal < 0 || fuelSurcharge < 0 || gstAmount < 0 || grandTotal < 0) {
+      return res.status(400).json({ message: 'Financial values cannot be negative' });
+    }
+
+    const shipment = await ShipmentLedger.findOne({ trackingNumber });
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    if (shipment.accounting.paymentStatus === 'PAID') {
+      return res.status(400).json({ message: 'Invoice already settled' });
+    }
+
+    // Update the ledger document
+    shipment.status = 'READY_FOR_DISPATCH';
+    
+    // Save base logic inside accounting
+    shipment.accounting.accountantId = req.user?.id;
+    shipment.accounting.baseRateApplied = baseRateApplied;
+    shipment.accounting.subtotal = subtotal;
+    
+    // Add custom fuel surcharge into tax block or create new block
+    // We will save it in tax along with gst for simplicity
+    shipment.accounting.tax = {
+      gstPercentage: 18,
+      gstAmount: gstAmount,
+      fuelSurcharge: fuelSurcharge // Mongoose allows adding unstructured fields if strict is false, or we just trust JS.
+    };
+    
+    shipment.accounting.grandTotal = grandTotal;
+    shipment.accounting.paymentStatus = 'PAID';
+    // Mongoose allows adding dynamic fields if strict is false. If strict is true, this will just be ignored.
+    shipment.accounting.paymentMethod = paymentMethod || 'SYSTEM'; 
+    shipment.accounting.invoiceGeneratedAt = new Date();
+
+    // Since we added fuelSurcharge and paymentMethod dynamically, let's mark modified to ensure save.
+    shipment.markModified('accounting');
+    await shipment.save();
+
+    res.status(200).json({ message: 'Invoice settled successfully', shipment });
+  } catch (error) {
+    console.error('Error settling invoice:', error);
+    res.status(500).json({ message: 'Server error settling invoice' });
   }
 };
