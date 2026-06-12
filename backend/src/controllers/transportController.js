@@ -54,3 +54,69 @@ exports.verifyDeliveryOtp = async (req, res) => {
     res.status(500).json({ message: 'Server error during OTP verification' });
   }
 };
+
+exports.getFleet = async (req, res) => {
+  try {
+    const fleet = await Device.find({});
+    res.status(200).json({ fleet });
+  } catch (error) {
+    console.error('Error fetching fleet:', error);
+    res.status(500).json({ message: 'Server error fetching fleet' });
+  }
+};
+
+const Driver = require('../models/NoSQL/Driver');
+exports.getDrivers = async (req, res) => {
+  try {
+    const drivers = await Driver.find({ status: 'AVAILABLE' });
+    res.status(200).json({ drivers });
+  } catch (error) {
+    console.error('Error fetching drivers:', error);
+    res.status(500).json({ message: 'Server error fetching drivers' });
+  }
+};
+
+exports.startTrip = async (req, res) => {
+  try {
+    const { trackingNumber } = req.body;
+    if (!trackingNumber) {
+      return res.status(400).json({ message: 'Tracking number is required' });
+    }
+
+    const shipment = await ShipmentLedger.findOne({ trackingNumber });
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    if (shipment.status !== 'READY_FOR_DISPATCH') {
+      return res.status(400).json({ message: 'Shipment must be READY_FOR_DISPATCH to start trip' });
+    }
+
+    // Update shipment status
+    shipment.status = 'IN_TRANSIT';
+    await shipment.save();
+
+    // Update driver status
+    const driverPhone = shipment.logistics?.transport?.driverPhone;
+    if (driverPhone) {
+      await Driver.findOneAndUpdate(
+        { phone: driverPhone },
+        { status: 'ON_TRIP' }
+      );
+    }
+
+    // Update device status if applicable
+    const vehicleReg = shipment.logistics?.transport?.vehicleNumber;
+    if (vehicleReg) {
+      await Device.findOneAndUpdate(
+        { vehicleRegistration: vehicleReg },
+        { status: 'ON_TRIP' }
+      );
+    }
+
+    res.status(200).json({ message: 'Trip started successfully', shipment });
+  } catch (error) {
+    console.error('Error starting trip:', error);
+    res.status(500).json({ message: 'Server error starting trip' });
+  }
+};

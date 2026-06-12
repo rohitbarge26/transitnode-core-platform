@@ -14,7 +14,33 @@ const ShipmentTransactions = () => {
       const res = await axios.get(`/api/shipments?timeRange=${timeRange}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setShipments(res.data.shipments);
+      const fetchedShipments = res.data.shipments || [];
+      
+      // Inject Demo Shipments for Client Demo
+      const demoShipments = [
+        {
+          _id: 'demo1', trackingNumber: 'TR-DEMO-10001', status: 'PENDING',
+          logistics: { transport: { origin: 'Mumbai', destination: 'Pune', vehicleNumber: 'MH 12 AB 1234', driverName: 'Rajesh Kumar' }, sender: { name: 'Acme Corp' }, receiver: { name: 'Beta Logistics' } },
+          accounting: { grandTotal: 15400, paymentStatus: 'PENDING' }, metadata: { createdAt: new Date().toISOString() }
+        },
+        {
+          _id: 'demo2', trackingNumber: 'TR-DEMO-10002', status: 'READY_FOR_DISPATCH',
+          logistics: { transport: { origin: 'Delhi', destination: 'Jaipur', vehicleNumber: 'DL 1C 4567', driverName: 'Suresh Singh' }, sender: { name: 'Global Traders' }, receiver: { name: 'City Mart' } },
+          accounting: { grandTotal: 28500, paymentStatus: 'PAID' }, metadata: { createdAt: new Date(Date.now() - 86400000).toISOString() }
+        },
+        {
+          _id: 'demo3', trackingNumber: 'TR-DEMO-10003', status: 'IN_TRANSIT',
+          logistics: { transport: { origin: 'Bangalore', destination: 'Chennai', vehicleNumber: 'KA 01 XY 9876', driverName: 'Ramesh Patel' }, sender: { name: 'Tech Solutions' }, receiver: { name: 'Electro Hub' } },
+          accounting: { grandTotal: 42000, paymentStatus: 'PAID' }, metadata: { createdAt: new Date(Date.now() - 172800000).toISOString() }
+        },
+        {
+          _id: 'demo4', trackingNumber: 'TR-DEMO-10004', status: 'DELIVERED',
+          logistics: { transport: { origin: 'Kochi', destination: 'Trivandrum', vehicleNumber: 'KL 01 EF 5555', driverName: 'Mohan Das' }, sender: { name: 'Spice Exports' }, receiver: { name: 'Port Authority' } },
+          accounting: { grandTotal: 18250, paymentStatus: 'PAID' }, metadata: { createdAt: new Date(Date.now() - 432000000).toISOString() }
+        }
+      ];
+
+      setShipments([...demoShipments, ...fetchedShipments]);
       setError('');
     } catch (err) {
       console.error('Failed to load shipments:', err);

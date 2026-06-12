@@ -8,6 +8,7 @@ const ReceptionistIntake = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [recentShipments, setRecentShipments] = useState([]);
+  const [fleet, setFleet] = useState([]);
 
   const [formData, setFormData] = useState({
     senderName: '',
@@ -15,11 +16,19 @@ const ReceptionistIntake = () => {
     receiverName: '',
     receiverPhone: '',
     weight_kg: '',
-    dimensions: ''
+    dimensions: '',
+    driverName: '',
+    driverPhone: '',
+    vehicleNumber: '',
+    vehicleType: '',
+    origin: '',
+    destination: '',
+    commodityType: ''
   });
 
   useEffect(() => {
     fetchRecentShipments();
+    fetchFleet();
   }, []);
 
   const fetchRecentShipments = async () => {
@@ -28,6 +37,41 @@ const ReceptionistIntake = () => {
       setRecentShipments(response.data.shipments || []);
     } catch (err) {
       console.error("Error fetching shipments", err);
+    }
+  };
+
+  const fetchFleet = async () => {
+    try {
+      const response = await axios.get('/api/transports/fleet', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setFleet(response.data.fleet || []);
+    } catch (err) {
+      console.error("Error fetching fleet", err);
+    }
+  };
+
+  const handleDriverChange = (e) => {
+    const selectedDeviceId = e.target.value;
+    if (!selectedDeviceId) {
+      setFormData({
+        ...formData,
+        driverName: '',
+        driverPhone: '',
+        vehicleNumber: '',
+        vehicleType: ''
+      });
+      return;
+    }
+    const selectedDevice = fleet.find(d => d._id === selectedDeviceId);
+    if (selectedDevice) {
+      setFormData({
+        ...formData,
+        driverName: selectedDevice.driverName,
+        driverPhone: selectedDevice.driverPhone || '',
+        vehicleNumber: selectedDevice.vehicleRegistration,
+        vehicleType: selectedDevice.vehicleType
+      });
     }
   };
 
@@ -47,7 +91,9 @@ const ReceptionistIntake = () => {
         receptionistId: user.id
       };
       
-      const response = await axios.post('/api/shipments', payload);
+      const response = await axios.post('/api/shipments/create', payload, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setSuccess(`Shipment successfully generated! Tracking ID: ${response.data.shipment.trackingNumber}`);
       setFormData({
         senderName: '',
@@ -55,7 +101,14 @@ const ReceptionistIntake = () => {
         receiverName: '',
         receiverPhone: '',
         weight_kg: '',
-        dimensions: ''
+        dimensions: '',
+        driverName: '',
+        driverPhone: '',
+        vehicleNumber: '',
+        vehicleType: '',
+        origin: '',
+        destination: '',
+        commodityType: ''
       });
       fetchRecentShipments();
     } catch (err) {
@@ -105,6 +158,42 @@ const ReceptionistIntake = () => {
             <div style={{ flex: 1 }}>
               <label>Dimensions (LxWxH)</label>
               <input type="text" name="dimensions" placeholder="e.g. 10x10x10" value={formData.dimensions} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label>Origin</label>
+              <input type="text" name="origin" value={formData.origin} onChange={handleChange} required />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label>Destination</label>
+              <input type="text" name="destination" value={formData.destination} onChange={handleChange} required />
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label>Commodity Type</label>
+              <input type="text" name="commodityType" value={formData.commodityType} onChange={handleChange} required />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label>Driver Phone (Optional)</label>
+              <input type="text" name="driverPhone" value={formData.driverPhone} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label>Assign Driver & Vehicle</label>
+              <select onChange={handleDriverChange} required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}>
+                <option value="">-- Select Driver --</option>
+                {fleet.map((device) => (
+                  <option key={device._id} value={device._id}>
+                    {device.driverName} ({device.vehicleRegistration} - {device.vehicleType})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

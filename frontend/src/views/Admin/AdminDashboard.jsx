@@ -19,7 +19,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   
-  const [activeTab, setActiveTab] = useState('ANALYTICS'); // ANALYTICS, MANAGEMENT, MAP
+  const [activeTab, setActiveTab] = useState('ANALYTICS'); // ANALYTICS, MANAGEMENT, DRIVER_MANAGEMENT, MAP
   const [isDemoActive, setIsDemoActive] = useState(false);
   const [timeRange, setTimeRange] = useState('all');
   const [metrics, setMetrics] = useState({
@@ -50,10 +50,12 @@ const AdminDashboard = () => {
     vehicleNumber: '', 
     vehicleType: 'Container', 
     hardwareIMEI: '', 
-    driverName: '', 
+    driverId: '', 
     fitnessExpiry: '', 
     currentStatus: 'YARD' 
   });
+  const [driverForm, setDriverForm] = useState({ name: '', phone: '', licenseNumber: '', status: 'AVAILABLE' });
+  const [drivers, setDrivers] = useState([]);
 
   useEffect(() => {
     if (!token || user?.role !== 'ADMIN') {
@@ -62,6 +64,7 @@ const AdminDashboard = () => {
     }
     fetchAnalytics();
     fetchRates();
+    fetchDrivers();
 
     // Socket Initialization
     socketRef.current = io('http://localhost:3000');
@@ -144,6 +147,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchDrivers = async () => {
+    try {
+      const res = await axios.get('http://localhost:3000/api/admin/drivers', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDrivers(res.data.drivers || []);
+    } catch (error) {
+      console.error('Failed to fetch drivers', error);
+    }
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
@@ -176,10 +190,24 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Fleet asset registered successfully');
-      setDeviceForm({ vehicleNumber: '', vehicleType: 'Container', hardwareIMEI: '', driverName: '', fitnessExpiry: '', currentStatus: 'YARD' });
+      setDeviceForm({ vehicleNumber: '', vehicleType: 'Container', hardwareIMEI: '', driverId: '', fitnessExpiry: '', currentStatus: 'YARD' });
       fetchAnalytics(); // refresh metrics
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to register fleet asset');
+    }
+  };
+
+  const handleCreateDriver = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:3000/api/admin/drivers/create', driverForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Driver created successfully');
+      setDriverForm({ name: '', phone: '', licenseNumber: '', status: 'AVAILABLE' });
+      fetchDrivers();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to create driver');
     }
   };
 
@@ -243,6 +271,12 @@ const AdminDashboard = () => {
               className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MANAGEMENT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
             >
               User & Rates
+            </button>
+            <button 
+              onClick={() => setActiveTab('DRIVER_MANAGEMENT')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              Driver Management
             </button>
             <button 
               onClick={() => setActiveTab('MAP')}
@@ -469,8 +503,13 @@ const AdminDashboard = () => {
                         <input type="text" required value={deviceForm.hardwareIMEI} onChange={e => setDeviceForm({...deviceForm, hardwareIMEI: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Driver Name</label>
-                        <input type="text" required value={deviceForm.driverName} onChange={e => setDeviceForm({...deviceForm, driverName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Driver</label>
+                        <select required value={deviceForm.driverId} onChange={e => setDeviceForm({...deviceForm, driverId: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                          <option value="">-- Select a Driver --</option>
+                          {drivers.map(d => (
+                            <option key={d._id} value={d._id}>{d.name} ({d.phone})</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Fitness Expiry Date</label>
@@ -489,6 +528,79 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'DRIVER_MANAGEMENT' && (
+            <div className="space-y-8">
+              <h2 className="text-xl font-bold text-slate-800">Driver Management</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Add Driver Form */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Onboard New Driver</h3>
+                  <form onSubmit={handleCreateDriver} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                      <input type="text" required value={driverForm.name} onChange={e => setDriverForm({...driverForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                      <input type="text" required value={driverForm.phone} onChange={e => setDriverForm({...driverForm, phone: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">License Number</label>
+                      <input type="text" required value={driverForm.licenseNumber} onChange={e => setDriverForm({...driverForm, licenseNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border uppercase" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Initial Status</label>
+                      <select value={driverForm.status} onChange={e => setDriverForm({...driverForm, status: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                        <option value="AVAILABLE">AVAILABLE</option>
+                        <option value="ON_TRIP">ON_TRIP</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Add Driver</button>
+                  </form>
+                </div>
+
+                {/* Driver List */}
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Driver Roster</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-500 text-sm">
+                          <th className="py-3 px-4 font-bold">Name</th>
+                          <th className="py-3 px-4 font-bold">Phone</th>
+                          <th className="py-3 px-4 font-bold">License</th>
+                          <th className="py-3 px-4 font-bold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {drivers.length > 0 ? (
+                          drivers.map(d => (
+                            <tr key={d._id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                              <td className="py-3 px-4 font-medium text-slate-800">{d.name}</td>
+                              <td className="py-3 px-4 text-slate-600">{d.phone}</td>
+                              <td className="py-3 px-4 text-slate-600 font-mono text-xs">{d.licenseNumber}</td>
+                              <td className="py-3 px-4">
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${d.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' : d.status === 'ON_TRIP' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'}`}>
+                                  {d.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" className="py-8 text-center text-slate-400">No drivers found. Add one to get started.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -18,8 +18,27 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+import axios from 'axios';
+
 const AppRoutes = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+  
+  React.useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          console.warn('Unauthorized request. Logging out...');
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [logout]);
   
   return (
     <React.Suspense fallback={<div style={{ color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading System...</div>}>

@@ -22,6 +22,9 @@ const deviceSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    driverPhone: {
+      type: String,
+    },
     fitnessExpiry: {
       type: Date
     },

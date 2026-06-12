@@ -6,6 +6,7 @@ const IntakeDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [recentShipments, setRecentShipments] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [generatedShipment, setGeneratedShipment] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -21,6 +22,7 @@ const IntakeDashboard = () => {
 
   useEffect(() => {
     fetchRecentShipments();
+    fetchDrivers();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -31,6 +33,37 @@ const IntakeDashboard = () => {
       setRecentShipments(response.data.shipments || []);
     } catch (err) {
       console.error("Error fetching shipments", err);
+    }
+  };
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await axios.get('/api/transports/drivers', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setDrivers(response.data.drivers || []);
+    } catch (err) {
+      console.error("Error fetching drivers", err);
+    }
+  };
+
+  const handleDriverSelection = (e) => {
+    const selectedDriverId = e.target.value;
+    if (!selectedDriverId) {
+      setFormData({
+        ...formData,
+        driverName: '',
+        driverPhone: ''
+      });
+      return;
+    }
+    const selectedDriver = drivers.find(d => d._id === selectedDriverId);
+    if (selectedDriver) {
+      setFormData({
+        ...formData,
+        driverName: selectedDriver.name,
+        driverPhone: selectedDriver.phone || ''
+      });
     }
   };
 
@@ -212,13 +245,20 @@ const IntakeDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Name</label>
-                    <input type="text" name="driverName" value={formData.driverName} onChange={handleChange} required 
-                      className={inputClasses('driverName')} onFocus={() => setFocusedField('driverName')} onBlur={() => setFocusedField(null)} />
+                    <select onChange={handleDriverSelection} required
+                      className={inputClasses('driverSelection')} onFocus={() => setFocusedField('driverSelection')} onBlur={() => setFocusedField(null)}>
+                      <option value="">-- Select Driver --</option>
+                      {drivers.map((d) => (
+                        <option key={d._id} value={d._id}>
+                          {d.name} ({d.phone})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Mobile</label>
-                    <input type="text" name="driverPhone" value={formData.driverPhone} onChange={handleChange} required 
-                      className={inputClasses('driverPhone')} onFocus={() => setFocusedField('driverPhone')} onBlur={() => setFocusedField(null)} />
+                    <input type="text" name="driverPhone" value={formData.driverPhone} placeholder="Auto-filled" readOnly 
+                      className={`${inputClasses('driverPhone')} opacity-60 cursor-not-allowed`} />
                   </div>
                 </div>
 

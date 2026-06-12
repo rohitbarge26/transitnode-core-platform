@@ -3,6 +3,7 @@ const User = require('../models/NoSQL/User');
 const ShipmentLedger = require('../models/NoSQL/ShipmentLedger');
 const Device = require('../models/NoSQL/Device');
 const RateCard = require('../models/NoSQL/RateCard');
+const Driver = require('../models/NoSQL/Driver');
 
 exports.createUser = async (req, res) => {
   try {
@@ -233,11 +234,22 @@ exports.mapDevice = async (req, res) => {
 
 exports.registerFleetAsset = async (req, res) => {
   try {
-    const { vehicleNumber, vehicleType, hardwareIMEI, fitnessExpiry, currentStatus } = req.body;
+    const { vehicleNumber, vehicleType, hardwareIMEI, fitnessExpiry, currentStatus, driverId } = req.body;
 
-    if (!vehicleNumber || !hardwareIMEI || !driverName) {
-      // Driver Name missing in prompt for register fleet? 
-      // The schema requires driverName. Let's add a dummy if missing or expect it.
+    if (!vehicleNumber || !hardwareIMEI) {
+      return res.status(400).json({ message: 'Vehicle Number and Hardware IMEI are required' });
+    }
+
+    let driverName = 'Unassigned';
+    let driverPhone = '';
+    if (driverId) {
+      const driver = await Driver.findById(driverId);
+      if (driver) {
+        driverName = driver.name;
+        driverPhone = driver.phone;
+      }
+    } else if (req.body.driverName) {
+      driverName = req.body.driverName;
     }
 
     let device = await Device.findOne({ imei: hardwareIMEI });
@@ -249,7 +261,8 @@ exports.registerFleetAsset = async (req, res) => {
       imei: hardwareIMEI,
       vehicleRegistration: vehicleNumber,
       vehicleType: vehicleType || 'Container',
-      driverName: req.body.driverName || 'Unassigned', // Fallback for required field
+      driverName: driverName,
+      driverPhone: driverPhone,
       fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
       status: currentStatus || 'YARD'
     });
@@ -260,6 +273,44 @@ exports.registerFleetAsset = async (req, res) => {
   } catch (error) {
     console.error('Error registering fleet asset:', error);
     res.status(500).json({ message: 'Server error registering asset' });
+  }
+};
+
+exports.createDriver = async (req, res) => {
+  try {
+    const { name, phone, licenseNumber, status } = req.body;
+
+    if (!name || !phone || !licenseNumber) {
+      return res.status(400).json({ message: 'Name, Phone, and License Number are required' });
+    }
+
+    const existingDriver = await Driver.findOne({ $or: [{ phone }, { licenseNumber }] });
+    if (existingDriver) {
+      return res.status(400).json({ message: 'Driver with this phone or license already exists' });
+    }
+
+    const newDriver = new Driver({
+      name,
+      phone,
+      licenseNumber,
+      status: status || 'AVAILABLE'
+    });
+
+    await newDriver.save();
+    res.status(201).json({ message: 'Driver created successfully', driver: newDriver });
+  } catch (error) {
+    console.error('Error creating driver:', error);
+    res.status(500).json({ message: 'Server error creating driver' });
+  }
+};
+
+exports.getDrivers = async (req, res) => {
+  try {
+    const drivers = await Driver.find().sort({ createdAt: -1 });
+    res.status(200).json({ drivers });
+  } catch (error) {
+    console.error('Error fetching drivers:', error);
+    res.status(500).json({ message: 'Server error fetching drivers' });
   }
 };
 

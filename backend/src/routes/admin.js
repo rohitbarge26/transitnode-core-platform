@@ -13,6 +13,10 @@ const { startDemoSimulation, stopDemoSimulation } = require('../hardware/demoSim
 // User Management
 router.post('/users/create', adminController.createUser);
 
+// Driver Management
+router.post('/drivers/create', adminController.createDriver);
+router.get('/drivers', adminController.getDrivers);
+
 // Analytics
 router.get('/analytics/revenue', adminController.getAnalytics);
 
