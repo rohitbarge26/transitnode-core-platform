@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { TenantBrandingProvider } from './context/TenantBrandingContext';
-import AppRouter from './routes/AppRouter';
+import { TenantBrandingProvider } from './context/TenantBrandingContext.jsx';
+import AppRouter from './routes/AppRouter.jsx';
 import './index.css';
 
 const App = () => {
