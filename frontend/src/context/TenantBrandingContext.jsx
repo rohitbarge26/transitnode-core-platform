@@ -19,7 +19,8 @@ export const TenantBrandingProvider = ({ children }) => {
         hostname === 'transitnode.in' || 
         hostname === 'www.transitnode.in' ||
         hostname === 'corematrix.in' ||
-        hostname === 'www.corematrix.in';
+        hostname === 'www.corematrix.in' ||
+        hostname.endsWith('.vercel.app');
 
       if (isMainDomain) {
         setTenantState('MAIN_LANDING_PAGE');
