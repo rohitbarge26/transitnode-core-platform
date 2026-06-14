@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const TelemetryLog = require('../models/NoSQL/TelemetryLog');
 const mockRoute = require('./mockRoute');
 
@@ -18,6 +19,7 @@ const startDemoSimulation = (io) => {
 
       const coordinates = mockRoute[currentStep];
       const payload = {
+        tenantId: new mongoose.Types.ObjectId(),
         vehicleId: 'DEMO-VEHICLE-01',
         status: 'MOVING',
         location: {

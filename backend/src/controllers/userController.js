@@ -3,7 +3,7 @@ const User = require('../models/NoSQL/User');
 // GET /api/users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}, '-password').sort({ createdAt: -1 });
+    const users = await User.find({ tenantId: req.user.tenantId }, '-password').sort({ createdAt: -1 });
     res.status(200).json({ users });
   } catch (error) {
     console.error(error);
@@ -15,7 +15,7 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id, '-password');
+    const user = await User.findOne({ _id: id, tenantId: req.user.tenantId }, '-password');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -34,8 +34,8 @@ exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const { email, name, role } = req.body;
     
-    const user = await User.findByIdAndUpdate(
-      id,
+    const user = await User.findOneAndUpdate(
+      { _id: id, tenantId: req.user.tenantId },
       { email, name, role },
       { new: true, runValidators: true }
     ).select('-password');
@@ -55,7 +55,7 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findByIdAndDelete(id);
+    const user = await User.findOneAndDelete({ _id: id, tenantId: req.user.tenantId });
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

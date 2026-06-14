@@ -5,7 +5,7 @@ const ShipmentTransactions = () => {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [timeRange, setTimeRange] = useState('all');
+  const [timeRange, setTimeRange] = useState('day');
 
   const fetchShipments = async () => {
     setLoading(true);

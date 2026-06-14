@@ -65,10 +65,11 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variable files
+# Block configuration profiles from accidentally leaking onto public GitHub repos
 .env
-.env.*
-!.env.example
+.env.local
+.env.staging
+node_modules/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

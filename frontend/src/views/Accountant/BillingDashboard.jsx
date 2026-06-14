@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import InvoiceTemplate from '../../components/InvoiceTemplate';
+import InvoiceModal from '../../components/InvoiceModal';
 
 const BillingDashboard = () => {
   const [invoices, setInvoices] = useState([]);
@@ -101,18 +101,8 @@ const BillingDashboard = () => {
           grandTotal
         }
       });
-
-      // Timeout allows React to render the InvoiceTemplate before calling print
-      setTimeout(() => {
-        const originalTitle = document.title;
-        document.title = `TNE_${selectedInvoice.trackingNumber}`;
-        window.print();
-        document.title = originalTitle;
-        // Clear selection and refresh queue
-        setSelectedInvoice(null);
-        setPrintData(null);
-        fetchInvoices();
-      }, 500);
+      // Refresh queue after successful patch
+      fetchInvoices();
 
     } catch (err) {
       console.error('Failed to settle invoice', err);
@@ -296,11 +286,16 @@ const BillingDashboard = () => {
         )}
       </div>
 
-      {/* Hidden printable invoice container */}
+      {/* Modal for Invoice Print Preview */}
       {printData && (
-        <div id="printable-label" className="hidden print:block absolute inset-0 bg-white">
-          <InvoiceTemplate data={printData} />
-        </div>
+        <InvoiceModal 
+          invoice={printData} 
+          orientation="portrait"
+          onClose={() => {
+            setPrintData(null);
+            setSelectedInvoice(null);
+          }} 
+        />
       )}
     </div>
   );

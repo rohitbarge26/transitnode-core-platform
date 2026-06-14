@@ -1,0 +1,80 @@
+{
+  "info": {
+    "name": "TransitNode Auth Demo - Driver Login",
+    "description": "Collection demonstrating the authentication gateway for Driver App.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Driver Login Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"9811122233\",\n  \"password\": \"TN@suresh45\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Mock POST request targeting the authentication gateway route `/api/auth/login`. Ensures the backend responds with a valid JSON Web Token (JWT) and validates the 'DRIVER' role object."
+      },
+      "response": [
+        {
+          "name": "Successful Login Response Example",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"9811122233\",\n  \"password\": \"TN@suresh45\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"message\": \"Login successful\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR...\",\n    \"user\": {\n        \"id\": \"64b2c12345abcdef67890123\",\n        \"username\": \"9811122233\",\n        \"name\": \"Suresh Kumar\",\n        \"role\": \"DRIVER\"\n    }\n}"
+        }
+      ]
+    }
+  ]
+}

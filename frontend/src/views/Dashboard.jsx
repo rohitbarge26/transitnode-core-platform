@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import IntakeDashboard from './Receptionist/IntakeDashboard';
 import BillingDashboard from './Accountant/BillingDashboard';
+import AccountantPayroll from './Accountant/AccountantPayroll';
 import YardArrivals from './GateOperations/YardArrivals';
 import { Navigate } from 'react-router-dom';
 
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const [stats, setStats] = useState({ activeShipments: 0, pendingInvoices: 0 });
   const [receptionistTab, setReceptionistTab] = useState('INTAKE');
+  const [accountantTab, setAccountantTab] = useState('BILLING');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -67,7 +69,41 @@ const Dashboard = () => {
           </div>
         );
       case 'ACCOUNTANT':
-        return <BillingDashboard />;
+        return (
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+              <button 
+                onClick={() => setAccountantTab('BILLING')}
+                style={{
+                  background: accountantTab === 'BILLING' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
+                  border: accountantTab === 'BILLING' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
+                  color: accountantTab === 'BILLING' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: accountantTab === 'BILLING' ? 'bold' : 'normal'
+                }}
+              >
+                Freight Billing
+              </button>
+              <button 
+                onClick={() => setAccountantTab('PAYROLL')}
+                style={{
+                  background: accountantTab === 'PAYROLL' ? 'rgba(74, 222, 128, 0.2)' : 'transparent',
+                  border: accountantTab === 'PAYROLL' ? '1px solid #4ade80' : '1px solid transparent',
+                  color: accountantTab === 'PAYROLL' ? '#4ade80' : 'var(--text-secondary)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: accountantTab === 'PAYROLL' ? 'bold' : 'normal'
+                }}
+              >
+                Payroll & Salary Slips
+              </button>
+            </div>
+            {accountantTab === 'BILLING' ? <BillingDashboard /> : <AccountantPayroll />}
+          </div>
+        );
       default:
         return null;
     }

@@ -7,6 +7,7 @@ const IntakeDashboard = () => {
   const [error, setError] = useState('');
   const [recentShipments, setRecentShipments] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [fleet, setFleet] = useState([]);
   const [generatedShipment, setGeneratedShipment] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -23,6 +24,7 @@ const IntakeDashboard = () => {
   useEffect(() => {
     fetchRecentShipments();
     fetchDrivers();
+    fetchFleet();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -47,22 +49,68 @@ const IntakeDashboard = () => {
     }
   };
 
+  const fetchFleet = async () => {
+    try {
+      const response = await axios.get('/api/transports/fleet', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      // Filter vehicles that are 'YARD' (idle and ready for dispatch)
+      setFleet(response.data.fleet?.filter(v => v.status === 'YARD') || []);
+    } catch (err) {
+      console.error("Error fetching fleet", err);
+    }
+  };
+
   const handleDriverSelection = (e) => {
     const selectedDriverId = e.target.value;
     if (!selectedDriverId) {
       setFormData({
         ...formData,
         driverName: '',
-        driverPhone: ''
+        driverPhone: '',
+        vehicleNumber: '',
+        vehicleType: '14-Ft Container'
       });
       return;
     }
     const selectedDriver = drivers.find(d => d._id === selectedDriverId);
     if (selectedDriver) {
+      const assignedVehicle = selectedDriver.assignedVehicle;
+      const vehicleObj = fleet.find(f => f.vehicleRegistration === assignedVehicle);
+      
       setFormData({
         ...formData,
         driverName: selectedDriver.name,
-        driverPhone: selectedDriver.phone || ''
+        driverPhone: selectedDriver.phone || '',
+        vehicleNumber: assignedVehicle || formData.vehicleNumber,
+        vehicleType: vehicleObj ? vehicleObj.vehicleType : formData.vehicleType
+      });
+    }
+  };
+
+  const handleVehicleSelection = (e) => {
+    const selectedVehicleReg = e.target.value;
+    if (!selectedVehicleReg) {
+      setFormData({
+        ...formData,
+        vehicleNumber: '',
+        vehicleType: '14-Ft Container',
+        driverName: '',
+        driverPhone: ''
+      });
+      return;
+    }
+    const selectedVehicle = fleet.find(f => f.vehicleRegistration === selectedVehicleReg);
+    if (selectedVehicle) {
+      // Find if this vehicle is assigned to a driver
+      const assignedDriver = drivers.find(d => d.assignedVehicle === selectedVehicleReg || d.phone === selectedVehicle.driverPhone);
+      
+      setFormData({
+        ...formData,
+        vehicleNumber: selectedVehicleReg,
+        vehicleType: selectedVehicle.vehicleType || '14-Ft Container',
+        driverName: assignedDriver ? assignedDriver.name : (selectedVehicle.driverName || ''),
+        driverPhone: assignedDriver ? assignedDriver.phone : (selectedVehicle.driverPhone || '')
       });
     }
   };
@@ -226,26 +274,44 @@ const IntakeDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Registration Number</label>
-                    <input type="text" name="vehicleNumber" placeholder="e.g. MH12AB1234" value={formData.vehicleNumber} onChange={handleChange} required 
-                      className={inputClasses('vehicleNumber')} onFocus={() => setFocusedField('vehicleNumber')} onBlur={() => setFocusedField(null)} />
+                    <select name="vehicleNumber" value={formData.vehicleNumber} onChange={handleVehicleSelection} required 
+                      className={inputClasses('vehicleNumber')} onFocus={() => setFocusedField('vehicleNumber')} onBlur={() => setFocusedField(null)}>
+                      <option value="">-- Select Available Vehicle --</option>
+                      {fleet.map((v) => (
+                        <option key={v._id} value={v.vehicleRegistration}>
+                          {v.vehicleRegistration}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Type</label>
-                    <select name="vehicleType" value={formData.vehicleType} onChange={handleChange} required
-                      className={inputClasses('vehicleType')} onFocus={() => setFocusedField('vehicleType')} onBlur={() => setFocusedField(null)}>
-                      <option value="14-Ft Container">14-Ft Container</option>
-                      <option value="19-Ft Container">19-Ft Container</option>
-                      <option value="22-Ft Open">22-Ft Open</option>
-                      <option value="Pickup">Pickup</option>
-                      <option value="Trailer">Trailer</option>
-                    </select>
+                    <input 
+                      type="text" 
+                      list="intake-vehicle-types"
+                      name="vehicleType" 
+                      value={formData.vehicleType} 
+                      onChange={handleChange} 
+                      required
+                      className={inputClasses('vehicleType')} 
+                      onFocus={() => setFocusedField('vehicleType')} 
+                      onBlur={() => setFocusedField(null)} 
+                      placeholder="Select or type..."
+                    />
+                    <datalist id="intake-vehicle-types">
+                      {[...new Set(['14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', ...fleet.map(a => a.vehicleType).filter(Boolean)])].map(type => (
+                        <option key={type} value={type} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Name</label>
-                    <select onChange={handleDriverSelection} required
+                    <select 
+                      value={drivers.find(d => d.name === formData.driverName)?._id || ''} 
+                      onChange={handleDriverSelection} required
                       className={inputClasses('driverSelection')} onFocus={() => setFocusedField('driverSelection')} onBlur={() => setFocusedField(null)}>
                       <option value="">-- Select Driver --</option>
                       {drivers.map((d) => (

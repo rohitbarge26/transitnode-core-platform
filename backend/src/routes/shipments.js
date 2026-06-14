@@ -8,10 +8,10 @@ const checkRole = require('../middleware/checkRole');
 router.post('/create', verifyToken, checkRole('RECEPTIONIST'), shipController.createShipment);
 
 // GET /api/shipments
-router.get('/', shipController.listShipments);
+router.get('/', verifyToken, shipController.listShipments);
 
 // GET /api/shipments/stats
-router.get('/stats', shipController.getStats);
+router.get('/stats', verifyToken, shipController.getStats);
 
 // GET /api/shipments/invoices/pending (Requires Accountant/Admin)
 router.get('/invoices/pending', verifyToken, checkRole(['ACCOUNTANT', 'ADMIN']), shipController.getPendingInvoices);

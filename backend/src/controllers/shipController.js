@@ -15,6 +15,7 @@ exports.createShipment = async (req, res) => {
     const subtotal = baseRateApplied;
     
     const newShipment = await ShipmentLedger.create({
+      tenantId: req.user.tenantId,
       trackingNumber,
       status: 'PENDING',
       metadata: {
@@ -39,6 +40,17 @@ exports.createShipment = async (req, res) => {
         subtotal
       }
     });
+
+    // Mark the assigned Driver and Vehicle as ON_TRIP
+    if (driverPhone) {
+      const Driver = require('../models/NoSQL/Driver');
+      await Driver.findOneAndUpdate({ phone: driverPhone }, { status: 'ON_TRIP' });
+    }
+    
+    if (vehicleNumber) {
+      const Device = require('../models/NoSQL/Device');
+      await Device.findOneAndUpdate({ vehicleRegistration: vehicleNumber.toUpperCase() }, { status: 'ON_TRIP' });
+    }
 
     res.status(201).json({ message: 'Shipment created', shipment: newShipment });
   } catch (error) {
@@ -70,6 +82,7 @@ exports.listShipments = async (req, res) => {
     }
 
     const limitCount = timeRange === 'all' ? 100 : 500;
+    query.tenantId = req.user.tenantId;
     const shipments = await ShipmentLedger.find(query).sort({ 'metadata.createdAt': -1 }).limit(limitCount);
     res.status(200).json({ shipments });
   } catch (error) {
@@ -81,6 +94,7 @@ exports.listShipments = async (req, res) => {
 exports.getShipment = async (req, res) => {
   try {
     const { trackingId } = req.params;
+    // Public endpoint: trackingNumber is globally unique, no tenantId required
     const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId });
     
     if (!shipment) {
@@ -96,8 +110,8 @@ exports.getShipment = async (req, res) => {
 
 exports.getStats = async (req, res) => {
   try {
-    const activeShipments = await ShipmentLedger.countDocuments({ status: { $ne: 'DELIVERED' } });
-    const pendingInvoices = await ShipmentLedger.countDocuments({ 'accounting.paymentStatus': 'PENDING' });
+    const activeShipments = await ShipmentLedger.countDocuments({ status: { $ne: 'DELIVERED' }, tenantId: req.user.tenantId });
+    const pendingInvoices = await ShipmentLedger.countDocuments({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId });
     
     res.status(200).json({ activeShipments, pendingInvoices });
   } catch (error) {
@@ -108,7 +122,7 @@ exports.getStats = async (req, res) => {
 
 exports.getPendingInvoices = async (req, res) => {
   try {
-    const invoices = await ShipmentLedger.find({ 'accounting.paymentStatus': 'PENDING' }).sort({ 'metadata.createdAt': -1 });
+    const invoices = await ShipmentLedger.find({ 'accounting.paymentStatus': 'PENDING', tenantId: req.user.tenantId }).sort({ 'metadata.createdAt': -1 });
     res.status(200).json({ invoices });
   } catch (error) {
     console.error('Error fetching pending invoices:', error);
@@ -121,7 +135,7 @@ exports.processPayment = async (req, res) => {
     const { trackingId } = req.params;
     const { gstPercentage } = req.body;
     
-    const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId });
+    const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId, tenantId: req.user.tenantId });
     if (!shipment) return res.status(404).json({ message: 'Shipment not found' });
     if (shipment.accounting.paymentStatus === 'PAID') {
       return res.status(400).json({ message: 'Shipment is already paid' });

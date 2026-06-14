@@ -54,11 +54,11 @@ const Login = () => {
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '20px' }}>
-            <label className="input-label">Email Address</label>
+            <label className="input-label">Email Address or Mobile Number</label>
             <input 
-              type="email" 
+              type="text" 
               className="input-field" 
-              placeholder="admin@transitnode.com"
+              placeholder="admin@transitnode.com or 9876543210"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

@@ -1,0 +1,6 @@
+{
+  "appId": "com.transitnode.driverapp",
+  "appName": "TransitNode Driver",
+  "webDir": "build",
+  "bundledWebRuntime": false
+}
