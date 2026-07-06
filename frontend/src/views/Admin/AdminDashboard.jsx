@@ -63,10 +63,17 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isMapConnected, setIsMapConnected] = useState(false);
   const socketRef = useRef(null);
+  const activeRequestsRef = useRef(0);
 
   // Forms State
   const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION_EXECUTIVE' });
   const [rateForm, setRateForm] = useState({ basePricePerKg: '', volumetricDivisor: '', fuelSurchargeRate: '' });
+  const [selectedCompanyId, setSelectedCompanyId] = useState('MAIN');
+  const [templateType, setTemplateType] = useState('TEMPLATE_C');
+  const [rows, setRows] = useState([]);
+  const [globalLoading, setGlobalLoading] = useState(false);
+  const [loadedRateCard, setLoadedRateCard] = useState(null);
+  const [workingRows, setWorkingRows] = useState({ TEMPLATE_A: [], TEMPLATE_B: [] });
   const [deviceForm, setDeviceForm] = useState({ 
     vehicleNumber: '', 
     vehicleType: '14-Ft Container', 
@@ -148,18 +155,43 @@ const AdminDashboard = () => {
     };
   }, [token, user, navigate]);
 
-  // Inject Workspace Context
+  // Inject Workspace Context & Global API Loader
   useEffect(() => {
     const allowedRoles = ['ADMIN', 'ACCOUNTANT', 'OPERATION', 'OPERATION_EXECUTIVE'];
     if (!token || !allowedRoles.includes(user?.role)) return;
+
+    const showLoader = () => {
+      activeRequestsRef.current++;
+      setGlobalLoading(true);
+    };
+
+    const hideLoader = () => {
+      activeRequestsRef.current = Math.max(0, activeRequestsRef.current - 1);
+      if (activeRequestsRef.current === 0) {
+        setGlobalLoading(false);
+      }
+    };
     
-    const interceptor = axios.interceptors.request.use(config => {
+    const reqInterceptor = axios.interceptors.request.use(config => {
+      showLoader();
+
       if (config.headers && typeof config.headers.set === 'function') {
         config.headers.set('x-workspace-id', activeWorkspace || 'MAIN');
       } else {
         config.headers['x-workspace-id'] = activeWorkspace || 'MAIN';
       }
       return config;
+    }, error => {
+      hideLoader();
+      return Promise.reject(error);
+    });
+
+    const resInterceptor = axios.interceptors.response.use(response => {
+      hideLoader();
+      return response;
+    }, error => {
+      hideLoader();
+      return Promise.reject(error);
     });
 
     if (user?.role === 'ADMIN') {
@@ -167,12 +199,26 @@ const AdminDashboard = () => {
     } else {
       setLoading(false);
     }
-    fetchRates();
     fetchDrivers();
     fetchFleetAssets();
 
-    return () => axios.interceptors.request.eject(interceptor);
+    return () => {
+      axios.interceptors.request.eject(reqInterceptor);
+      axios.interceptors.response.eject(resInterceptor);
+    };
   }, [activeWorkspace, timeRange, token, user]);
+
+  // Sync selectedCompanyId with activeWorkspace
+  useEffect(() => {
+    setSelectedCompanyId(activeWorkspace || 'MAIN');
+  }, [activeWorkspace]);
+
+  // Fetch rates when selectedCompanyId changes
+  useEffect(() => {
+    if (selectedCompanyId && token) {
+      fetchRates(selectedCompanyId);
+    }
+  }, [selectedCompanyId, token]);
 
 
 
@@ -232,17 +278,37 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchRates = async () => {
+  const fetchRates = async (compId) => {
+    const targetCompId = compId || selectedCompanyId || 'MAIN';
     try {
       const url = user?.role === 'ADMIN'
         ? `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates`
         : `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/invoices/rates`;
       const res = await axios.get(url, {
+        params: { companyId: targetCompId },
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
         }
       });
+      setLoadedRateCard(res.data);
+      const activeTemplate = res.data.templateType || 'TEMPLATE_C';
+      setTemplateType(activeTemplate);
+
+      let rowsA = [];
+      let rowsB = [];
+      if (res.data.rows) {
+        if (Array.isArray(res.data.rows)) {
+          if (activeTemplate === 'TEMPLATE_A') rowsA = res.data.rows;
+          if (activeTemplate === 'TEMPLATE_B') rowsB = res.data.rows;
+        } else {
+          rowsA = res.data.rows.TEMPLATE_A || [];
+          rowsB = res.data.rows.TEMPLATE_B || [];
+        }
+      }
+      setWorkingRows({ TEMPLATE_A: rowsA, TEMPLATE_B: rowsB });
+      setRows(activeTemplate === 'TEMPLATE_A' ? rowsA : activeTemplate === 'TEMPLATE_B' ? rowsB : []);
+
       setRateForm({
         basePricePerKg: res.data.basePricePerKg || '',
         volumetricDivisor: res.data.volumetricDivisor || '',
@@ -471,13 +537,128 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleTemplateTypeChange = (newType) => {
+    setTemplateType(newType);
+    if (newType === 'TEMPLATE_A') {
+      setRows(workingRows.TEMPLATE_A || []);
+    } else if (newType === 'TEMPLATE_B') {
+      setRows(workingRows.TEMPLATE_B || []);
+    } else {
+      setRows([]);
+    }
+  };
+
+  const addRowTemplateA = () => {
+    const newRow = {
+      from: '',
+      to: '',
+      vehicleType: 'Tata Ace',
+      billingType: 'Fixed',
+      fixedKms: '',
+      rate12h: '',
+      rate24h: '',
+      extraKmRate: '',
+      extraHourRate: '',
+      detentionCharges: ''
+    };
+    const updated = [...rows, newRow];
+    setRows(updated);
+    setWorkingRows(prev => ({ ...prev, TEMPLATE_A: updated }));
+  };
+
+  const addRowTemplateB = () => {
+    const newRow = {
+      storeCode: '',
+      storeName: '',
+      location: '',
+      pincode: '',
+      city: '',
+      state: '',
+      zone: '',
+      tataAceRate: '',
+      tata407Rate: '',
+      rate14ft: '',
+      rate17ft: '',
+      rate20ft: '',
+      rate32ft: '',
+      detentionCostPerDay: '',
+      localPointCharges: '',
+      outOfStatePointCharges: ''
+    };
+    const updated = [...rows, newRow];
+    setRows(updated);
+    setWorkingRows(prev => ({ ...prev, TEMPLATE_B: updated }));
+  };
+
+  const updateRowField = (index, field, value) => {
+    const updatedRows = [...rows];
+    updatedRows[index][field] = value;
+    setRows(updatedRows);
+    setWorkingRows(prev => ({
+      ...prev,
+      [templateType]: updatedRows
+    }));
+  };
+
+  const removeRow = (index) => {
+    const updated = rows.filter((_, i) => i !== index);
+    setRows(updated);
+    setWorkingRows(prev => ({
+      ...prev,
+      [templateType]: updated
+    }));
+  };
+
   const handleUpdateRates = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (templateType === 'TEMPLATE_C') {
+      if (Number(rateForm.basePricePerKg) < 0 || Number(rateForm.volumetricDivisor) < 0 || Number(rateForm.fuelSurchargeRate) < 0) {
+        alert('Rates must be non-negative numbers.');
+        return;
+      }
+    } else if (templateType === 'TEMPLATE_A') {
+      // Validate non-negative numbers
+      for (const r of rows) {
+        // Skip validating completely empty rows since they will be stripped
+        if (!r.from && !r.to) continue;
+        if (
+          Number(r.fixedKms) < 0 || Number(r.rate12h) < 0 || Number(r.rate24h) < 0 ||
+          Number(r.extraKmRate) < 0 || Number(r.extraHourRate) < 0 || Number(r.detentionCharges) < 0
+        ) {
+          alert('All rates, KMS, and charges must be non-negative numbers.');
+          return;
+        }
+      }
+    } else if (templateType === 'TEMPLATE_B') {
+      // Validate non-negative numbers
+      for (const r of rows) {
+        if (!r.storeCode && !r.storeName && !r.location) continue;
+        if (
+          Number(r.tataAceRate) < 0 || Number(r.tata407Rate) < 0 || Number(r.rate14ft) < 0 || Number(r.rate17ft) < 0 ||
+          Number(r.rate20ft) < 0 || Number(r.rate32ft) < 0 || Number(r.detentionCostPerDay) < 0 ||
+          Number(r.localPointCharges) < 0 || Number(r.outOfStatePointCharges) < 0
+        ) {
+          alert('All rates, costs, and charges must be non-negative numbers.');
+          return;
+        }
+      }
+    }
+
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates/update`, rateForm, {
+      await axios.put(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates/update`, {
+        companyId: selectedCompanyId,
+        templateType,
+        rows,
+        basePricePerKg: rateForm.basePricePerKg,
+        volumetricDivisor: rateForm.volumetricDivisor,
+        fuelSurchargeRate: rateForm.fuelSurchargeRate
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Rates updated successfully');
+      fetchRates(selectedCompanyId);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update rates');
     }
@@ -664,6 +845,15 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800">
+      {/* Global Loader Overlay */}
+      {globalLoading && (
+        <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[9999] flex justify-center items-center pointer-events-auto">
+          <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600"></div>
+            <p className="text-sm font-semibold text-slate-700">Processing Request...</p>
+          </div>
+        </div>
+      )}
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
         <div className="p-6">
@@ -676,7 +866,7 @@ const AdminDashboard = () => {
             onChange={(e) => setActiveWorkspace(e.target.value === 'MAIN' ? null : e.target.value)}
           >
             <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'}</option>
-            {workspaces.map(ws => (
+            {workspaces.filter(ws => !ws.isMainTenant).map(ws => (
               <option key={ws._id} value={ws._id}>{ws.companyName}</option>
             ))}
           </select>
@@ -991,91 +1181,404 @@ const AdminDashboard = () => {
               <h2 className="text-xl font-bold text-slate-800">Management Controls</h2>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* User & Employee Column */}
-                <div className="space-y-8">
-                  {/* User Provisioning */}
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Provision New User</h3>
-                    <form onSubmit={handleCreateUser} className="space-y-4" autoComplete="off">
-                      <div>
+                {/* User Provisioning */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Provision New User</h3>
+                  <form onSubmit={handleCreateUser} className="space-y-4" autoComplete="off">
+                    <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
                       <input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
                     </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                        <input type="email" autoComplete="new-email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Mobile Number</label>
-                        <input type="text" value={userForm.mobileNumber} onChange={e => setUserForm({...userForm, mobileNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                        <input type="password" required autoComplete="new-password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-                        <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
-                          <option value="OPERATION_EXECUTIVE">Operation Executive</option>
-                          <option value="ACCOUNTANT">Accountant</option>
-                          <option value="ADMIN">Admin</option>
-                        </select>
-                      </div>
-                      <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Create User</button>
-                    </form>
-                  </div>
-
-                  {/* Employee Verification Form */}
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-8">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Employee Verification</h3>
-                    <form onSubmit={handleVerifyEmployee} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
-                        <input type="text" required value={employeeForm.employeeId} onChange={e => setEmployeeForm({...employeeForm, employeeId: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Employee Name</label>
-                        <input type="text" required value={employeeForm.employeeName} onChange={e => setEmployeeForm({...employeeForm, employeeName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Aadhaar Card (Compulsory)</label>
-                        <input type="file" required onChange={e => setEmployeeForm({...employeeForm, aadhaar: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">PAN Card (Compulsory)</label>
-                        <input type="file" required onChange={e => setEmployeeForm({...employeeForm, pan: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Address Proof (e.g. Light Bill - Compulsory)</label>
-                        <input type="file" required onChange={e => setEmployeeForm({...employeeForm, addressProof: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                      </div>
-                      <button type="submit" className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition font-medium">Verify & Upload</button>
-                    </form>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                      <input type="email" autoComplete="new-email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Mobile Number</label>
+                      <input type="text" value={userForm.mobileNumber} onChange={e => setUserForm({...userForm, mobileNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                      <input type="password" required autoComplete="new-password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                      <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                        <option value="OPERATION_EXECUTIVE">Operation Executive</option>
+                        <option value="ACCOUNTANT">Accountant</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Create User</button>
+                  </form>
                 </div>
 
-                {/* Rates config */}
-                <div className="space-y-8">
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4">Rate Card Configuration</h3>
-                    <form onSubmit={handleUpdateRates} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Base Price Per KG (₹)</label>
-                        <input type="number" required value={rateForm.basePricePerKg} onChange={e => setRateForm({...rateForm, basePricePerKg: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Volumetric Divisor</label>
-                        <input type="number" required value={rateForm.volumetricDivisor} onChange={e => setRateForm({...rateForm, volumetricDivisor: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Fuel Surcharge Rate (%)</label>
-                        <input type="number" required value={rateForm.fuelSurchargeRate} onChange={e => setRateForm({...rateForm, fuelSurchargeRate: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                      </div>
-                      <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Update Rates</button>
-                    </form>
+                {/* Employee Verification Form */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">Employee Verification</h3>
+                  <form onSubmit={handleVerifyEmployee} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
+                      <input type="text" required value={employeeForm.employeeId} onChange={e => setEmployeeForm({...employeeForm, employeeId: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Employee Name</label>
+                      <input type="text" required value={employeeForm.employeeName} onChange={e => setEmployeeForm({...employeeForm, employeeName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm p-2 border" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Aadhaar Card (Compulsory)</label>
+                      <input type="file" required onChange={e => setEmployeeForm({...employeeForm, aadhaar: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">PAN Card (Compulsory)</label>
+                      <input type="file" required onChange={e => setEmployeeForm({...employeeForm, pan: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Address Proof (e.g. Light Bill - Compulsory)</label>
+                      <input type="file" required onChange={e => setEmployeeForm({...employeeForm, addressProof: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                    </div>
+                    <button type="submit" className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition font-medium">Verify & Upload</button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Rate Card Configuration */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 space-y-6">
+                <div className="border-b border-slate-100 pb-4">
+                  <h3 className="text-lg font-bold text-slate-800">Rate Card Configuration</h3>
+                  <p className="text-sm text-slate-500 mt-1">Configure client-specific pricing tables for automated billing workflows.</p>
+                </div>
+                <form onSubmit={handleUpdateRates} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Select Client / Company</label>
+                      <select 
+                        value={selectedCompanyId} 
+                        onChange={e => setSelectedCompanyId(e.target.value)} 
+                        className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                      >
+                        <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'} (Main HQ)</option>
+                        {workspaces.filter(ws => !ws.isMainTenant).map(ws => (
+                          <option key={ws._id} value={ws._id}>{ws.companyName}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Select Rate Card Template Type</label>
+                      <select 
+                        value={templateType} 
+                        onChange={e => handleTemplateTypeChange(e.target.value)} 
+                        className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                      >
+                        <option value="TEMPLATE_A">Route-Based Pricing (Point-to-Point)</option>
+                        <option value="TEMPLATE_B">Store Hub / Zone Matrix Pricing</option>
+                        <option value="TEMPLATE_C">Flat Rate Pricing (Weight/Volume)</option>
+                      </select>
+                    </div>
                   </div>
 
-                </div>
+                  {/* Render Template A */}
+                  {templateType === 'TEMPLATE_A' && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-md font-semibold text-slate-700">Route-Based Pricing Table (Point-to-Point)</h4>
+                        <button 
+                          type="button" 
+                          onClick={addRowTemplateA} 
+                          className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold py-2 px-3 rounded-lg border border-indigo-200 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Route Row
+                        </button>
+                      </div>
+                      
+                      <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
+                        <table className="min-w-full divide-y divide-slate-200 text-sm">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[140px]">From (Origin)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[140px]">To (Destination)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[130px]">Vehicle Type</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[130px]">Billing Type</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[90px]">Fixed KMS</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">12h Rate (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">24h Rate (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">Extra KM (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">Extra Hour (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">Detention (₹)</th>
+                              <th className="px-3 py-3 text-center font-semibold text-slate-600 w-16">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-100">
+                            {rows.map((row, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="text" 
+                                    value={row.from || ''} 
+                                    onChange={e => updateRowField(idx, 'from', e.target.value)} 
+                                    placeholder="Origin" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="text" 
+                                    value={row.to || ''} 
+                                    onChange={e => updateRowField(idx, 'to', e.target.value)} 
+                                    placeholder="Destination" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <select 
+                                    value={row.vehicleType || 'Tata Ace'} 
+                                    onChange={e => updateRowField(idx, 'vehicleType', e.target.value)} 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500"
+                                  >
+                                    {['Tata Ace', 'Tata 407', '14FT', '17FT', '20FT', '32FT'].map(v => (
+                                      <option key={v} value={v}>{v}</option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td className="px-2 py-2">
+                                  <select 
+                                    value={row.billingType || 'Fixed'} 
+                                    onChange={e => updateRowField(idx, 'billingType', e.target.value)} 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500"
+                                  >
+                                    {['Fixed', 'Per KM', 'Per Trip', 'Monthly', 'Adhoc'].map(b => (
+                                      <option key={b} value={b}>{b}</option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={row.fixedKms || ''} 
+                                    onChange={e => updateRowField(idx, 'fixedKms', e.target.value)} 
+                                    placeholder="0" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={row.rate12h || ''} 
+                                    onChange={e => updateRowField(idx, 'rate12h', e.target.value)} 
+                                    placeholder="0" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={row.rate24h || ''} 
+                                    onChange={e => updateRowField(idx, 'rate24h', e.target.value)} 
+                                    placeholder="0" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={row.extraKmRate || ''} 
+                                    onChange={e => updateRowField(idx, 'extraKmRate', e.target.value)} 
+                                    placeholder="0" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={row.extraHourRate || ''} 
+                                    onChange={e => updateRowField(idx, 'extraHourRate', e.target.value)} 
+                                    placeholder="0" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={row.detentionCharges || ''} 
+                                    onChange={e => updateRowField(idx, 'detentionCharges', e.target.value)} 
+                                    placeholder="0" 
+                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
+                                  />
+                                </td>
+                                <td className="px-2 py-2 text-center">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => removeRow(idx)} 
+                                    className="text-rose-600 hover:text-rose-800 p-1"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {rows.length === 0 && (
+                              <tr>
+                                <td colSpan="11" className="px-4 py-8 text-center text-slate-400 font-medium bg-slate-50/50">
+                                  No route configuration rows added. Click "Add Route Row" to start.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Render Template B */}
+                  {templateType === 'TEMPLATE_B' && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-md font-semibold text-slate-700">Store Hub / Zone Matrix Pricing Table</h4>
+                        <button 
+                          type="button" 
+                          onClick={addRowTemplateB} 
+                          className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold py-2 px-3 rounded-lg border border-indigo-200 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Store Hub Row
+                        </button>
+                      </div>
+                      
+                      <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
+                        <table className="min-w-full divide-y divide-slate-200 text-xs">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">Store Code</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[120px]">Store Name</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[120px]">Location</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[80px]">Pincode</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">City</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">State</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[70px]">Zone</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">Ace Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">407 Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">14FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">17FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">20FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">32FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[85px]">Detention/d</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[85px]">Local Pt (₹)</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">Out-of-St (₹)</th>
+                              <th className="px-2 py-3 text-center font-semibold text-slate-600 w-12">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-100">
+                            {rows.map((row, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50">
+                                <td className="px-1 py-2">
+                                  <input type="text" value={row.storeCode || ''} onChange={e => updateRowField(idx, 'storeCode', e.target.value)} placeholder="Code" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="text" value={row.storeName || ''} onChange={e => updateRowField(idx, 'storeName', e.target.value)} placeholder="Name" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="text" value={row.location || ''} onChange={e => updateRowField(idx, 'location', e.target.value)} placeholder="Address" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.pincode || ''} onChange={e => updateRowField(idx, 'pincode', e.target.value)} placeholder="Pin" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="text" value={row.city || ''} onChange={e => updateRowField(idx, 'city', e.target.value)} placeholder="City" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="text" value={row.state || ''} onChange={e => updateRowField(idx, 'state', e.target.value)} placeholder="State" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="text" value={row.zone || ''} onChange={e => updateRowField(idx, 'zone', e.target.value)} placeholder="Zone" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.tataAceRate || ''} onChange={e => updateRowField(idx, 'tataAceRate', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.tata407Rate || ''} onChange={e => updateRowField(idx, 'tata407Rate', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.rate14ft || ''} onChange={e => updateRowField(idx, 'rate14ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.rate17ft || ''} onChange={e => updateRowField(idx, 'rate17ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.rate20ft || ''} onChange={e => updateRowField(idx, 'rate20ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.rate32ft || ''} onChange={e => updateRowField(idx, 'rate32ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.detentionCostPerDay || ''} onChange={e => updateRowField(idx, 'detentionCostPerDay', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.localPointCharges || ''} onChange={e => updateRowField(idx, 'localPointCharges', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2">
+                                  <input type="number" min="0" value={row.outOfStatePointCharges || ''} onChange={e => updateRowField(idx, 'outOfStatePointCharges', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
+                                </td>
+                                <td className="px-1 py-2 text-center">
+                                  <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {rows.length === 0 && (
+                              <tr>
+                                <td colSpan="17" className="px-4 py-8 text-center text-slate-400 font-medium bg-slate-50/50">
+                                  No location grid rows added. Click "Add Store Hub Row" to start.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Render Template C */}
+                  {templateType === 'TEMPLATE_C' && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <h4 className="text-md font-semibold text-slate-700">Flat Rate Pricing (Weight/Volume)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Base Price Per KG (₹)</label>
+                          <input type="number" required value={rateForm.basePricePerKg} onChange={e => setRateForm({...rateForm, basePricePerKg: e.target.value})} className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Volumetric Divisor</label>
+                          <input type="number" required value={rateForm.volumetricDivisor} onChange={e => setRateForm({...rateForm, volumetricDivisor: e.target.value})} className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Fuel Surcharge Rate (%)</label>
+                          <input type="number" required value={rateForm.fuelSurchargeRate} onChange={e => setRateForm({...rateForm, fuelSurchargeRate: e.target.value})} className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t border-slate-100 flex justify-end">
+                    <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Update Rates</button>
+                  </div>
+                </form>
               </div>
               
               {/* Users List Table */}

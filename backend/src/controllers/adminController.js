@@ -226,16 +226,113 @@ exports.getAnalytics = async (req, res) => {
 
 exports.updateRates = async (req, res) => {
   try {
-    const { basePricePerKg, volumetricDivisor, fuelSurchargeRate } = req.body;
+    const { companyId, templateType, basePricePerKg, volumetricDivisor, fuelSurchargeRate, rows } = req.body;
     
-    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: req.workspaceId });
-    if (!rateCard) {
-      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: req.workspaceId });
+    // If companyId matches the tenantId (Main HQ) or is 'MAIN', we set companyId to null
+    const targetCompanyId = (companyId && companyId !== 'MAIN' && companyId !== req.user.tenantId.toString()) ? companyId : null;
+
+    let validatedRows = [];
+    const activeTemplateType = templateType || 'TEMPLATE_C';
+
+    if (activeTemplateType === 'TEMPLATE_A' && Array.isArray(rows)) {
+      validatedRows = rows
+        .map(row => ({
+          from: (row.from || '').trim(),
+          to: (row.to || '').trim(),
+          vehicleType: row.vehicleType || 'Tata Ace',
+          billingType: row.billingType || 'Fixed',
+          fixedKms: Number(row.fixedKms) || 0,
+          rate12h: Number(row.rate12h) || 0,
+          rate24h: Number(row.rate24h) || 0,
+          extraKmRate: Number(row.extraKmRate) || 0,
+          extraHourRate: Number(row.extraHourRate) || 0,
+          detentionCharges: Number(row.detentionCharges) || 0,
+        }))
+        .filter(row => row.from && row.to); // eliminate blank origin/destination entries
+
+      // Validate non-negative numbers and billing types
+      const allowedBillingTypes = ['Fixed', 'Per KM', 'Per Trip', 'Monthly', 'Adhoc'];
+      for (const row of validatedRows) {
+        if (
+          row.fixedKms < 0 || row.rate12h < 0 || row.rate24h < 0 ||
+          row.extraKmRate < 0 || row.extraHourRate < 0 || row.detentionCharges < 0
+        ) {
+          return res.status(400).json({ message: 'All numeric values for route rates must be non-negative.' });
+        }
+        if (!allowedBillingTypes.includes(row.billingType)) {
+          return res.status(400).json({ message: `Invalid billing type "${row.billingType}". Must be one of: ${allowedBillingTypes.join(', ')}` });
+        }
+      }
+    } else if (activeTemplateType === 'TEMPLATE_B' && Array.isArray(rows)) {
+      validatedRows = rows
+        .map(row => ({
+          storeCode: (row.storeCode || '').trim(),
+          storeName: (row.storeName || '').trim(),
+          location: (row.location || '').trim(),
+          pincode: Number(row.pincode) || null,
+          city: (row.city || '').trim(),
+          state: (row.state || '').trim(),
+          zone: (row.zone || '').trim(),
+          tataAceRate: Number(row.tataAceRate) || 0,
+          tata407Rate: Number(row.tata407Rate) || 0,
+          rate14ft: Number(row.rate14ft) || 0,
+          rate17ft: Number(row.rate17ft) || 0,
+          rate20ft: Number(row.rate20ft) || 0,
+          rate32ft: Number(row.rate32ft) || 0,
+          detentionCostPerDay: Number(row.detentionCostPerDay) || 0,
+          localPointCharges: Number(row.localPointCharges) || 0,
+          outOfStatePointCharges: Number(row.outOfStatePointCharges) || 0,
+        }))
+        .filter(row => row.storeCode || row.storeName || row.location); // eliminate blank entries
+
+      // Validate non-negative numbers
+      for (const row of validatedRows) {
+        if (
+          row.tataAceRate < 0 || row.tata407Rate < 0 || row.rate14ft < 0 || row.rate17ft < 0 ||
+          row.rate20ft < 0 || row.rate32ft < 0 || row.detentionCostPerDay < 0 ||
+          row.localPointCharges < 0 || row.outOfStatePointCharges < 0
+        ) {
+          return res.status(400).json({ message: 'All numeric values for zone rates must be non-negative.' });
+        }
+      }
+    } else if (activeTemplateType === 'TEMPLATE_C') {
+      if (basePricePerKg !== undefined && Number(basePricePerKg) < 0) {
+        return res.status(400).json({ message: 'Base Price Per KG must be non-negative.' });
+      }
+      if (volumetricDivisor !== undefined && Number(volumetricDivisor) < 0) {
+        return res.status(400).json({ message: 'Volumetric Divisor must be non-negative.' });
+      }
+      if (fuelSurchargeRate !== undefined && Number(fuelSurchargeRate) < 0) {
+        return res.status(400).json({ message: 'Fuel Surcharge Rate must be non-negative.' });
+      }
     }
 
-    if (basePricePerKg !== undefined) rateCard.basePricePerKg = basePricePerKg;
-    if (volumetricDivisor !== undefined) rateCard.volumetricDivisor = volumetricDivisor;
-    if (fuelSurchargeRate !== undefined) rateCard.fuelSurchargeRate = fuelSurchargeRate;
+    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId });
+    if (!rateCard) {
+      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId });
+    }
+
+    // Ensure rows is an object map to preserve different template configurations
+    if (!rateCard.rows || Array.isArray(rateCard.rows)) {
+      const oldRows = Array.isArray(rateCard.rows) ? rateCard.rows : [];
+      rateCard.rows = {
+        TEMPLATE_A: rateCard.templateType === 'TEMPLATE_A' ? oldRows : [],
+        TEMPLATE_B: rateCard.templateType === 'TEMPLATE_B' ? oldRows : []
+      };
+    }
+
+    rateCard.templateType = activeTemplateType;
+    if (activeTemplateType === 'TEMPLATE_A') {
+      rateCard.rows.TEMPLATE_A = validatedRows;
+      rateCard.markModified('rows');
+    } else if (activeTemplateType === 'TEMPLATE_B') {
+      rateCard.rows.TEMPLATE_B = validatedRows;
+      rateCard.markModified('rows');
+    } else {
+      if (basePricePerKg !== undefined) rateCard.basePricePerKg = Number(basePricePerKg);
+      if (volumetricDivisor !== undefined) rateCard.volumetricDivisor = Number(volumetricDivisor);
+      if (fuelSurchargeRate !== undefined) rateCard.fuelSurchargeRate = Number(fuelSurchargeRate);
+    }
 
     await rateCard.save();
     res.status(200).json({ message: 'Rate card updated successfully', rateCard });
@@ -247,9 +344,21 @@ exports.updateRates = async (req, res) => {
 
 exports.getRates = async (req, res) => {
   try {
-    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: req.workspaceId });
+    const { companyId } = req.query;
+    const targetCompanyId = (companyId && companyId !== 'MAIN' && companyId !== req.user.tenantId.toString()) ? companyId : null;
+
+    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId });
     if (!rateCard) {
-      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: req.workspaceId, basePricePerKg: 10, volumetricDivisor: 5000, fuelSurchargeRate: 5 });
+      rateCard = new RateCard({
+        type: 'GLOBAL',
+        tenantId: req.user.tenantId,
+        companyId: targetCompanyId,
+        templateType: 'TEMPLATE_C',
+        basePricePerKg: 10,
+        volumetricDivisor: 5000,
+        fuelSurchargeRate: 5,
+        rows: { TEMPLATE_A: [], TEMPLATE_B: [] }
+      });
       await rateCard.save();
     }
     res.status(200).json(rateCard);
