@@ -12,6 +12,7 @@ import ComplianceVault from './ComplianceVault';
 import ShipmentTransactions from './ShipmentTransactions';
 import FinancialLedger from './FinancialLedger';
 import SupplierManagement from './SupplierManagement';
+import DailyRunSheet from './DailyRunSheet';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -974,6 +975,7 @@ const AdminDashboard = () => {
                     <button onClick={() => setActiveTab('MAP')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'MAP' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Live Fleet Map</button>
                     <button onClick={() => setActiveTab('FLEET_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FLEET_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Fleet Management</button>
                     <button onClick={() => setActiveTab('DRIVER_MANAGEMENT')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DRIVER_MANAGEMENT' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Driver Management</button>
+                    <button onClick={() => setActiveTab('DAILY_RUN_SHEET')} className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'DAILY_RUN_SHEET' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Daily Run Sheets</button>
                   </div>
                 )}
               </div>
@@ -1247,6 +1249,10 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {activeTab === 'DAILY_RUN_SHEET' && (
+            <DailyRunSheet workspaces={workspaces} suppliers={suppliers} />
           )}
 
           {activeTab === 'MANAGEMENT' && (

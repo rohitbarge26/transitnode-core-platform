@@ -76,6 +76,10 @@ router.post('/suppliers/create', supplierController.createSupplier);
 router.get('/subscription', adminController.getSubscriptionDetails);
 router.put('/subscription/upgrade', adminController.updateSubscriptionPlan);
 
+// Daily Run Sheets
+router.get('/runsheets', adminController.getDailyRunSheets);
+router.post('/runsheets', adminController.createDailyRunSheet);
+
 // Demo Simulation Toggle
 router.post('/demo/toggle', (req, res) => {
   const { active } = req.body;

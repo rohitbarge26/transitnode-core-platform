@@ -832,3 +832,34 @@ exports.updateSubscriptionPlan = async (req, res) => {
     res.status(500).json({ message: 'Server error updating subscription plan' });
   }
 };
+
+exports.createDailyRunSheet = async (req, res) => {
+  try {
+    const DailyRunSheet = require('../models/NoSQL/DailyRunSheet');
+    const tenantId = req.user.tenantId;
+
+    const newRunSheet = new DailyRunSheet({
+      ...req.body,
+      tenantId
+    });
+
+    await newRunSheet.save();
+    res.status(201).json({ message: 'Daily Run Sheet created successfully', runSheet: newRunSheet });
+  } catch (error) {
+    console.error('Error creating Daily Run Sheet:', error);
+    res.status(500).json({ message: 'Server error creating Daily Run Sheet' });
+  }
+};
+
+exports.getDailyRunSheets = async (req, res) => {
+  try {
+    const DailyRunSheet = require('../models/NoSQL/DailyRunSheet');
+    const tenantId = req.user.tenantId;
+    
+    const runSheets = await DailyRunSheet.find({ tenantId }).sort({ createdAt: -1 });
+    res.status(200).json({ runSheets });
+  } catch (error) {
+    console.error('Error fetching Daily Run Sheets:', error);
+    res.status(500).json({ message: 'Server error fetching Daily Run Sheets' });
+  }
+};
