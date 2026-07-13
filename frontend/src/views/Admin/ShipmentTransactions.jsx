@@ -66,7 +66,7 @@ const ShipmentTransactions = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-6">
-      <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+      <div className="p-3 sm:p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Shipment Transactions Ledger</h2>
           <p className="text-sm text-slate-500 mt-1">Real-time view of all generated trips, transport statuses, and billing values.</p>
@@ -76,7 +76,7 @@ const ShipmentTransactions = () => {
             <select
               value={billingCycle}
               onChange={(e) => setBillingCycle(e.target.value)}
-              className="appearance-none bg-indigo-50 text-indigo-700 border border-indigo-200 py-2 pl-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-bold tracking-wide transition-all cursor-pointer"
+              className="appearance-none bg-indigo-50 text-indigo-700 border border-indigo-200 py-2 pl-4 pr-5 sm:pr-8 md:pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-bold tracking-wide transition-all cursor-pointer"
             >
               <option value="ALL">All Ledgers</option>
               <option value="DAILY">Daily / Cash Trips</option>
@@ -92,7 +92,7 @@ const ShipmentTransactions = () => {
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="appearance-none bg-white border border-slate-300 text-slate-700 py-2 pl-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-medium transition-all cursor-pointer"
+              className="appearance-none bg-white border border-slate-300 text-slate-700 py-2 pl-4 pr-5 sm:pr-8 md:pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-medium transition-all cursor-pointer"
             >
               <option value="all">All Time</option>
               <option value="day">Last 24 Hours</option>
@@ -145,11 +145,11 @@ const ShipmentTransactions = () => {
           <tbody className="divide-y divide-slate-100 bg-white">
             {loading ? (
               <tr>
-                <td colSpan="5" className="p-8 text-center text-slate-400 animate-pulse">Loading transaction records...</td>
+                <td colSpan="5" className="p-4 sm:p-6 md:p-8 text-center text-slate-400 animate-pulse">Loading transaction records...</td>
               </tr>
             ) : shipments.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-8 text-center text-slate-500">No shipments found in the ledger.</td>
+                <td colSpan="5" className="p-4 sm:p-6 md:p-8 text-center text-slate-500">No shipments found in the ledger.</td>
               </tr>
             ) : (
               shipments.map(ship => (

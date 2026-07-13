@@ -213,7 +213,7 @@ const BankMatchingDashboard = () => {
   return (
     <div className="mt-4">
       {/* Top Banner / Actions */}
-      <div className="glass-panel p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="glass-panel p-3 sm:p-4 md:p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h3 className="text-xl font-bold text-white">Bank Feed Reconciliation</h3>
           <p className="text-gray-400 text-sm mt-1">Upload bank statements or import bank feed, then match deposits directly to sales invoices.</p>
@@ -235,7 +235,7 @@ const BankMatchingDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[68vh]">
         
         {/* LEFT COLUMN: Bank Feed */}
-        <div className="lg:col-span-5 glass-panel p-6 flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-5 glass-panel p-3 sm:p-4 md:p-6 flex flex-col h-full overflow-hidden">
           <h4 className="text-base font-bold text-white mb-4 flex justify-between items-center">
             <span>Bank statement (Unmatched)</span>
             <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded border border-red-500/30">
@@ -245,9 +245,9 @@ const BankMatchingDashboard = () => {
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
             {loading ? (
-              <div className="text-center py-12 text-gray-500 animate-pulse">Loading statements...</div>
+              <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500 animate-pulse">Loading statements...</div>
             ) : unmatchedTxs.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 text-sm">
+              <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500 text-sm">
                 No unmatched bank feed transactions. Upload a CSV or load the demo feed to test.
               </div>
             ) : (
@@ -313,7 +313,7 @@ const BankMatchingDashboard = () => {
         </div>
 
         {/* RIGHT COLUMN: Outstanding Sales Invoices */}
-        <div className="lg:col-span-5 glass-panel p-6 flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-5 glass-panel p-3 sm:p-4 md:p-6 flex flex-col h-full overflow-hidden">
           <h4 className="text-base font-bold text-white mb-4 flex justify-between items-center">
             <span>Pending Receivables</span>
             <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/30">
@@ -323,9 +323,9 @@ const BankMatchingDashboard = () => {
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
             {loading ? (
-              <div className="text-center py-12 text-gray-500 animate-pulse">Loading receivables...</div>
+              <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500 animate-pulse">Loading receivables...</div>
             ) : allMatchableInvoices.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 text-sm">
+              <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500 text-sm">
                 No pending/unpaid invoices found in the system.
               </div>
             ) : (

@@ -134,7 +134,7 @@ const FlipkartMisEntry = () => {
   `;
 
   return (
-    <div className="w-full max-w-4xl mx-auto mt-6 animate-fade-in pb-12">
+    <div className="w-full max-w-4xl mx-auto mt-6 animate-fade-in pb-6 sm:pb-8 md:pb-12">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 tracking-tight">
           Flipkart MIS Data Entry
@@ -144,7 +144,7 @@ const FlipkartMisEntry = () => {
 
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-30 transition duration-1000"></div>
-        <div className="relative bg-[#111827] border border-gray-700 p-8 rounded-2xl shadow-2xl">
+        <div className="relative bg-[#111827] border border-gray-700 p-4 sm:p-6 md:p-8 rounded-2xl shadow-2xl">
           
           {error && (
             <div className="bg-red-500 bg-opacity-10 border-l-4 border-red-500 text-red-400 p-4 rounded mb-6">
@@ -163,7 +163,7 @@ const FlipkartMisEntry = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             
             {/* General Trip Info */}
-            <div className="bg-gray-800 bg-opacity-20 p-6 rounded-xl border border-gray-700/50 space-y-4">
+            <div className="bg-gray-800 bg-opacity-20 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 space-y-4">
               <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest border-b border-gray-700 pb-2">1. General Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="relative">
@@ -185,7 +185,7 @@ const FlipkartMisEntry = () => {
             </div>
 
             {/* Vehicle Details */}
-            <div className="bg-gray-800 bg-opacity-20 p-6 rounded-xl border border-gray-700/50 space-y-4">
+            <div className="bg-gray-800 bg-opacity-20 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 space-y-4">
               <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest border-b border-gray-700 pb-2">2. Vehicle & Driver Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
@@ -233,7 +233,7 @@ const FlipkartMisEntry = () => {
             </div>
 
             {/* Time & Odometer calculations */}
-            <div className="bg-gray-800 bg-opacity-20 p-6 rounded-xl border border-gray-700/50 space-y-4">
+            <div className="bg-gray-800 bg-opacity-20 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 space-y-4">
               <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest border-b border-gray-700 pb-2">3. Time & Distance Calculations</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
@@ -272,7 +272,7 @@ const FlipkartMisEntry = () => {
             </div>
 
             {/* Movement & Entity */}
-            <div className="bg-gray-800 bg-opacity-20 p-6 rounded-xl border border-gray-700/50 space-y-4">
+            <div className="bg-gray-800 bg-opacity-20 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 space-y-4">
               <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest border-b border-gray-700 pb-2">4. Movement & Business Entity</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">

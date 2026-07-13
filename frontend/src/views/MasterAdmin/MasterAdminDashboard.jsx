@@ -332,15 +332,15 @@ const MasterAdminDashboard = () => {
           <div className="space-y-8 animate-in fade-in duration-200">
             {/* Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Total SaaS Revenue</h3>
                 <p className="text-5xl font-black text-amber-500 mt-4">₹{(summary?.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Global Active Vehicles</h3>
                 <p className="text-5xl font-black text-indigo-600 mt-4">{summary?.activeVehiclesCount || 0}</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6 flex flex-col justify-center items-center text-center hover:shadow-md transition-shadow">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Daily Telemetry Volume</h3>
                 <p className="text-5xl font-black text-emerald-600 mt-4">{summary?.dailyTrackingVolume || 0}</p>
               </div>
@@ -349,7 +349,7 @@ const MasterAdminDashboard = () => {
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Bar Chart: Tenants by Tier */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6">
                 <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Tenants by Subscription Tier</h2>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -375,7 +375,7 @@ const MasterAdminDashboard = () => {
               </div>
 
               {/* Pie/Donut Chart: Revenue by Payment Method */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6">
                 <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Revenue by Payment Method</h2>
                 <div className="h-80 w-full flex flex-col sm:flex-row justify-center items-center">
                   {paymentMethodData.length > 0 ? (
@@ -418,7 +418,7 @@ const MasterAdminDashboard = () => {
             </div>
 
             {/* Area Chart: Revenue growth trend */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6">
               <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-2">SaaS Revenue Growth Trend (Cumulative)</h2>
               <div className="h-80 w-full">
                 {revenueTrendData.length > 0 ? (
@@ -456,7 +456,7 @@ const MasterAdminDashboard = () => {
         {/* 2. Tenants Directory Tab */}
         {activeTab === 'tenants' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200">
-            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+            <div className="p-3 sm:p-4 md:p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">All Registered Tenants</h2>
                 <p className="text-xs text-slate-500 mt-1">
@@ -564,7 +564,7 @@ const MasterAdminDashboard = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="p-8 text-center text-slate-500 font-medium">No matching tenants found.</td>
+                      <td colSpan="7" className="p-4 sm:p-6 md:p-8 text-center text-slate-500 font-medium">No matching tenants found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -575,7 +575,7 @@ const MasterAdminDashboard = () => {
 
         {/* 3. Onboard Tenant Tab */}
         {activeTab === 'onboard' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-4xl mx-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 md:p-6 max-w-4xl mx-auto animate-in fade-in duration-200">
             <h2 className="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Manual Tenant Onboarding (Offline Payments)</h2>
             <form onSubmit={handleManualOnboard} className="space-y-4">
               <div>
@@ -632,7 +632,7 @@ const MasterAdminDashboard = () => {
         {/* 4. Transactions History Tab */}
         {activeTab === 'transactions' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200">
-            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+            <div className="p-3 sm:p-4 md:p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">Subscription Transactions History</h2>
                 <p className="text-xs text-slate-500 mt-1">
@@ -735,7 +735,7 @@ const MasterAdminDashboard = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="p-8 text-center text-slate-500 font-medium">No matching transactions found.</td>
+                      <td colSpan="5" className="p-4 sm:p-6 md:p-8 text-center text-slate-500 font-medium">No matching transactions found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -750,7 +750,7 @@ const MasterAdminDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
             {/* Modal Header */}
-            <div className="flex justify-between items-center bg-slate-900 text-white p-6">
+            <div className="flex justify-between items-center bg-slate-900 text-white p-3 sm:p-4 md:p-6">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">Tenant Details</h2>
                 {tenantDetails && (
@@ -773,7 +773,7 @@ const MasterAdminDashboard = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 bg-slate-50">
+            <div className="p-3 sm:p-4 md:p-6 overflow-y-auto flex-1 bg-slate-50">
               {loadingDetails || !tenantDetails ? (
                 <div className="flex justify-center items-center py-20">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -781,7 +781,7 @@ const MasterAdminDashboard = () => {
               ) : (
                 <div className="space-y-8">
                   {/* Summary Cards */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
                       <p className="text-xs font-bold text-slate-500 uppercase">Plan</p>
                       <p className="text-lg font-black text-indigo-600 mt-1">{tenantDetails.tenant.planType}</p>
@@ -852,7 +852,7 @@ const MasterAdminDashboard = () => {
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="mt-8 pt-6 border-t border-red-100">
+                  <div className="mt-8 pt-3 sm:pt-4 md:pt-6 border-t border-red-100">
                     <h3 className="text-sm font-bold text-red-500 uppercase tracking-wide mb-4">Danger Zone</h3>
                     {tenantDetails.tenant.isSuspended ? (
                       <button
@@ -882,7 +882,7 @@ const MasterAdminDashboard = () => {
             
             {/* Modal Footer */}
             <div className="bg-white border-t border-slate-200 p-4 text-right">
-              <button onClick={closeTenantDetails} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-6 rounded-lg transition-colors">
+              <button onClick={closeTenantDetails} className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-3 sm:px-4 md:px-6 rounded-lg transition-colors">
                 Close
               </button>
             </div>
@@ -894,11 +894,11 @@ const MasterAdminDashboard = () => {
       {onboardSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95">
-            <div className="bg-emerald-500 p-6 flex flex-col items-center justify-center text-white">
+            <div className="bg-emerald-500 p-3 sm:p-4 md:p-6 flex flex-col items-center justify-center text-white">
               <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               <h2 className="text-2xl font-bold">Successfully Onboarded!</h2>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-3 sm:p-4 md:p-6 space-y-4">
               <p className="text-slate-600 text-center">Tenant has been provisioned. Please send the setup link below to the client.</p>
               
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
@@ -916,7 +916,7 @@ const MasterAdminDashboard = () => {
               </div>
             </div>
             <div className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end">
-              <button onClick={() => setOnboardSuccess(null)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+              <button onClick={() => setOnboardSuccess(null)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 sm:px-4 md:px-6 rounded-lg transition-colors">
                 Done
               </button>
             </div>

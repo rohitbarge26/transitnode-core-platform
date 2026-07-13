@@ -63,7 +63,7 @@ const YardArrivals = () => {
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-800 font-sans">
       {/* Header */}
-      <header className="bg-slate-900 text-white p-6 shadow-md flex justify-between items-center">
+      <header className="bg-slate-900 text-white p-3 sm:p-4 md:p-6 shadow-md flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-black tracking-tight">Yard Arrivals & Verification Portal</h1>
           <p className="text-sm text-slate-400">Desktop Gate Clerk Interface</p>
@@ -72,7 +72,7 @@ const YardArrivals = () => {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel: Arrived Fleet Tracker */}
-        <div className="w-1/3 min-w-[400px] border-r border-slate-200 bg-white p-6 overflow-y-auto">
+        <div className="w-1/3 min-w-[400px] border-r border-slate-200 bg-white p-3 sm:p-4 md:p-6 overflow-y-auto">
           <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Expected & Arrived Fleet
@@ -80,7 +80,7 @@ const YardArrivals = () => {
           
           <div className="space-y-4">
             {trips.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-8">No incoming fleet found.</p>
+              <p className="text-slate-500 text-sm text-center py-4 sm:py-6 md:py-8">No incoming fleet found.</p>
             ) : (
               trips.map(trip => (
                 <div 
@@ -106,9 +106,9 @@ const YardArrivals = () => {
         </div>
 
         {/* Right Panel: OTP Handshake Portal */}
-        <div className="flex-1 bg-slate-50 p-10 flex flex-col items-center justify-center relative">
+        <div className="flex-1 bg-slate-50 p-5 sm:p-8 md:p-10 flex flex-col items-center justify-center relative">
           {selectedTrip ? (
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 p-10 transform transition-all animate-fade-in">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 p-5 sm:p-8 md:p-10 transform transition-all animate-fade-in">
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-black text-slate-800 mb-2">OTP Handshake Portal</h3>
                 <p className="text-slate-500 text-sm">Verify receiver identity to authorize cargo unloading.</p>
@@ -121,7 +121,7 @@ const YardArrivals = () => {
               )}
 
               <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-8">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Vehicle</span>
                     <span className="font-bold font-mono">{selectedTrip.logistics?.transport?.vehicleNumber}</span>

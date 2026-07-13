@@ -75,7 +75,7 @@ const PublicTracker = () => {
       <div className="flex flex-col justify-center items-center h-screen bg-[#0B0E14] text-white">
         <h1 className="text-4xl font-bold text-red-500 mb-4">404 NOT FOUND</h1>
         <p className="text-gray-400 mb-8">{error}</p>
-        <button onClick={() => navigate('/login')} className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">Return to Portal</button>
+        <button onClick={() => navigate('/login')} className="px-3 sm:px-4 md:px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">Return to Portal</button>
       </div>
     );
   }
@@ -107,7 +107,7 @@ const PublicTracker = () => {
     <div className="flex flex-col lg:flex-row h-screen bg-[#0B0E14] text-white overflow-hidden">
       
       {/* Sidebar Details */}
-      <div className="w-full lg:w-1/3 p-6 lg:p-10 flex flex-col h-full overflow-y-auto border-r border-gray-800 z-10 bg-[#0B0E14] shadow-2xl relative">
+      <div className="w-full lg:w-1/3 p-3 sm:p-4 md:p-6 lg:p-10 flex flex-col h-full overflow-y-auto border-r border-gray-800 z-10 bg-[#0B0E14] shadow-2xl relative">
         <div className="mb-8">
           <button onClick={() => navigate('/login')} className="text-sm text-gray-400 hover:text-cyan-400 flex items-center transition-colors mb-6">
             ← Access Terminal

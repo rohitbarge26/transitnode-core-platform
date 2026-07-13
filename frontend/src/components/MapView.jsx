@@ -94,7 +94,7 @@ const MapView = ({ vehicles = {}, vehicleHistory = {}, selectedVehicleId = null,
                     <h4 className="font-bold text-slate-800 text-lg mb-1 uppercase">{vehicle.vehicleRegistration}</h4>
                     <p className="text-sm text-slate-600 mb-3">Driver: <span className="font-bold text-slate-800">{vehicle.driverName}</span></p>
                     
-                    <div className="bg-slate-50 p-3 rounded-md border border-slate-100 grid grid-cols-2 gap-3 mb-3">
+                    <div className="bg-slate-50 p-3 rounded-md border border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                       <div>
                         <span className="text-xs text-slate-500 block uppercase font-bold tracking-wider mb-1">Speed</span>
                         <span className="font-mono text-indigo-600 font-bold">{vehicle.speed} km/h</span>

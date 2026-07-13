@@ -1,5 +1,11 @@
 const express = require('express');
+const RateCard = require('../models/NoSQL/RateCard');
 const router = express.Router();
+
+router.get('/rates/clear', async (req, res) => {
+  await RateCard.deleteMany({});
+  res.json({ message: 'Cleared rate cards' });
+});
 const adminController = require('../controllers/adminController');
 const supplierController = require('../controllers/supplierController');
 const verifyToken = require('../middleware/verifyToken');

@@ -180,7 +180,7 @@ const PricingPortal = () => {
           </button>
         </nav>
       </div>      {/* Hero Segment */}
-      <header className="container mx-auto px-6 pt-16 pb-8 md:pt-24 md:pb-12 text-center max-w-5xl relative">
+      <header className="container mx-auto px-3 sm:px-4 md:px-6 pt-16 pb-4 sm:pb-6 md:pb-8 md:pt-24 md:pb-12 text-center max-w-5xl relative">
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         
         <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-900/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest shadow-sm uppercase">
@@ -200,7 +200,7 @@ const PricingPortal = () => {
       </header>
  
       {/* Fleet Pricing Section */}
-      <section className="container mx-auto px-6 pt-8 pb-16 md:pt-10 md:pb-20 relative z-10">
+      <section className="container mx-auto px-3 sm:px-4 md:px-6 pt-4 sm:pt-6 md:pt-8 pb-16 md:pt-10 md:pb-20 relative z-10">
         <div className="text-center mb-12 max-w-2xl mx-auto">
           <div className="inline-block mb-4 px-5 py-2 rounded-full bg-slate-800/80 border border-teal-500/20 text-teal-400 text-sm font-bold tracking-widest uppercase">
             Fleet Subscription Tiers
@@ -316,7 +316,7 @@ const PricingPortal = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="container mx-auto px-6 py-16 md:py-20 relative z-10">
+      <section className="container mx-auto px-3 sm:px-4 md:px-6 py-16 md:py-20 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
@@ -351,7 +351,7 @@ const PricingPortal = () => {
                 style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
               >
                 {testimonials.map((t, idx) => (
-                  <div key={idx} className={`min-w-full w-full flex-shrink-0 ${t.bgColor} p-6 md:p-8 flex flex-col justify-between`}>
+                  <div key={idx} className={`min-w-full w-full flex-shrink-0 ${t.bgColor} p-3 sm:p-4 md:p-6 md:p-8 flex flex-col justify-between`}>
                     <div className="max-w-xl mx-auto w-full">
                       <div className={`w-9 h-9 ${t.iconColor} flex items-center justify-center mb-5 rounded-lg shadow-sm transform -rotate-6`}>
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d={t.iconPath}/></svg>
@@ -405,8 +405,8 @@ const PricingPortal = () => {
       {/* Registration Modal Overlay */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 sm:p-10">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg max-h-[95vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 sm:p-10">
               <h3 className="text-3xl font-extrabold mb-3 text-slate-900">Start Your Registration</h3>
               <p className="text-slate-500 mb-8 text-lg">
                 Provision your dedicated tenant workspace instantly.
@@ -414,22 +414,22 @@ const PricingPortal = () => {
               </p>
               
               {result ? (
-                <div className={`p-6 rounded-2xl mb-8 ${result.success ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                <div className={`p-3 sm:p-4 md:p-6 rounded-2xl mb-8 ${result.success ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
                   {result.message}
                 </div>
               ) : null}
 
               {result?.success ? (
-                <div className="pt-6 flex flex-col items-center space-y-4 w-full">
+                <div className="pt-3 sm:pt-4 md:pt-6 flex flex-col items-center space-y-4 w-full">
                   {result.magicLink && (
                     <a 
                       href={result.magicLink} 
-                      className="w-full bg-teal-600 hover:bg-teal-500 text-white px-8 py-3 rounded-xl font-bold transition-all text-center shadow-lg shadow-teal-600/25 text-lg block"
+                      className="w-full bg-teal-600 hover:bg-teal-500 text-white px-4 sm:px-6 md:px-8 py-3 rounded-xl font-bold transition-all text-center shadow-lg shadow-teal-600/25 text-lg block"
                     >
                       Go to Workspace Dashboard
                     </a>
                   )}
-                  <button type="button" onClick={() => { setShowModal(false); setResult(null); }} className="px-6 py-2 font-semibold text-slate-500 hover:text-slate-900 transition-all text-sm">
+                  <button type="button" onClick={() => { setShowModal(false); setResult(null); }} className="px-3 sm:px-4 md:px-6 py-2 font-semibold text-slate-500 hover:text-slate-900 transition-all text-sm">
                     Close
                   </button>
                 </div>
@@ -450,9 +450,9 @@ const PricingPortal = () => {
                       <span className="bg-slate-100 border border-slate-200 border-l-0 text-slate-500 px-3 md:px-5 py-4 font-medium flex items-center text-xs md:text-sm whitespace-nowrap">.prohitcoretech.in</span>
                     </div>
                   </div>
-                  <div className="pt-8 flex items-center justify-end space-x-4 border-t border-slate-100">
-                    <button type="button" onClick={() => setShowModal(false)} className="px-6 py-3 rounded-xl font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all text-lg">Cancel</button>
-                    <button type="submit" disabled={loading} className="bg-teal-600 hover:bg-teal-500 text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-teal-600/25 text-lg flex items-center">
+                  <div className="pt-4 sm:pt-6 md:pt-8 flex items-center justify-end space-x-4 border-t border-slate-100">
+                    <button type="button" onClick={() => setShowModal(false)} className="px-3 sm:px-4 md:px-6 py-3 rounded-xl font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all text-lg">Cancel</button>
+                    <button type="submit" disabled={loading} className="bg-teal-600 hover:bg-teal-500 text-white px-4 sm:px-6 md:px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-teal-600/25 text-lg flex items-center">
                       {loading ? (
                         <>
                           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -475,7 +475,7 @@ const PricingPortal = () => {
       <footer className="relative z-10 bg-slate-900 border-t-2 border-slate-700 text-white">
 
         {/* Main Footer Grid */}
-        <div className="container mx-auto px-6 max-w-7xl py-12 md:py-16">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-7xl py-6 sm:py-8 md:py-12 md:py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
 
             {/* Brand Block */}
@@ -529,7 +529,7 @@ const PricingPortal = () => {
         {/* Copyright Bar — solid dark background with guaranteed white text */}
         <div className="bg-slate-800 border-t-2 border-teal-500">
           <div className="h-[3px] bg-gradient-to-r from-teal-500 via-teal-300 to-emerald-400 w-full"></div>
-          <div className="container mx-auto px-6 max-w-7xl" style={{ paddingTop: '28px', paddingBottom: '28px' }}>
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-7xl" style={{ paddingTop: '28px', paddingBottom: '28px' }}>
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
 
               {/* Left: Copyright + Product */}

@@ -24,7 +24,7 @@ const InvoiceTemplate = ({ data, orientation = 'landscape' }) => {
           }
         `}
       </style>
-      <div className="w-full bg-white text-black p-6 relative font-sans print:p-2 print:h-auto">
+      <div className="w-full bg-white text-black p-3 sm:p-4 md:p-6 relative font-sans print:p-2 print:h-auto">
       
       {/* MANIFEST Watermark */}
       <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none z-0">
@@ -170,7 +170,7 @@ const InvoiceTemplate = ({ data, orientation = 'landscape' }) => {
         )}
 
         {/* Signatures */}
-        <div className="mt-10 print:mt-6 flex justify-between px-8">
+        <div className="mt-10 print:mt-6 flex justify-between px-4 sm:px-6 md:px-8">
           <div className="text-center">
             <div className="w-48 border-b border-gray-400 mb-2 print:mb-1"></div>
             <p className="text-xs font-bold text-gray-500 uppercase">Driver Signature</p>

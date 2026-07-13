@@ -46,7 +46,7 @@ const ConsolidatedInvoiceModal = ({ invoice, onClose }) => {
         grandTotal={invoice.financials.grandTotal}
         isEditable={false}
       />
-      <div className="text-center text-sm text-gray-500 mt-12 pt-8 border-t border-gray-200 print:hidden">
+      <div className="text-center text-sm text-gray-500 mt-12 pt-4 sm:pt-6 md:pt-8 border-t border-gray-200 print:hidden">
         <p>This is a computer generated master invoice and does not require a signature.</p>
         <p className="mt-1">For detailed shipment breakdown, please refer to the attached Excel Export.</p>
       </div>
@@ -57,14 +57,14 @@ const ConsolidatedInvoiceModal = ({ invoice, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4 print:static print:p-0 print:block print:bg-transparent">
       <div className="bg-gray-100 text-black rounded-lg shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col relative print:static print:overflow-visible print:max-h-none print:max-w-none print:shadow-none print:w-full print:bg-white print:border-none">
         
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white print:hidden">
+        <div className="px-3 sm:px-4 md:px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white print:hidden">
           <h2 className="text-xl font-bold text-gray-800">Print Master Invoice</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 print:p-0 print:overflow-visible print:bg-white">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 print:p-0 print:overflow-visible print:bg-white">
           <div className="bg-white shadow-md mx-auto max-w-full overflow-hidden print:hidden" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
             {content}
           </div>
@@ -77,8 +77,8 @@ const ConsolidatedInvoiceModal = ({ invoice, onClose }) => {
           document.body
         )}
 
-        <div className="px-6 py-4 bg-white border-t border-gray-200 flex justify-end gap-4 print:hidden shrink-0">
-          <button onClick={onClose} className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium transition-colors">Cancel</button>
+        <div className="px-3 sm:px-4 md:px-6 py-4 bg-white border-t border-gray-200 flex justify-end gap-4 print:hidden shrink-0">
+          <button onClick={onClose} className="px-3 sm:px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium transition-colors">Cancel</button>
           <button 
             onClick={() => {
               const originalTitle = document.title;
@@ -86,7 +86,7 @@ const ConsolidatedInvoiceModal = ({ invoice, onClose }) => {
               window.print();
               document.title = originalTitle;
             }}
-            className="px-6 py-2 bg-[#00a651] text-white rounded-md hover:bg-[#008f45] font-bold shadow-md hover:shadow-lg transition-all"
+            className="px-3 sm:px-4 md:px-6 py-2 bg-[#00a651] text-white rounded-md hover:bg-[#008f45] font-bold shadow-md hover:shadow-lg transition-all"
           >
             Print Master Invoice
           </button>

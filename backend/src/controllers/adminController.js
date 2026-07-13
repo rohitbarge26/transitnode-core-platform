@@ -226,11 +226,17 @@ exports.getAnalytics = async (req, res) => {
 
 exports.updateRates = async (req, res) => {
   try {
-    const { companyId, templateType, basePricePerKg, volumetricDivisor, fuelSurchargeRate, rows } = req.body;
+    const { companyId, supplierId, templateType, basePricePerKg, volumetricDivisor, fuelSurchargeRate, rows } = req.body;
     
-    // If companyId matches the tenantId (Main HQ) or is 'MAIN', we set companyId to null
-    const targetCompanyId = (companyId && companyId !== 'MAIN' && companyId !== req.user.tenantId.toString()) ? companyId : null;
+    let targetCompanyId = null;
+    let targetSupplierId = null;
 
+    if (companyId && companyId !== 'MAIN' && companyId !== req.user.tenantId.toString()) {
+      targetCompanyId = companyId;
+    }
+    if (supplierId && supplierId !== 'NONE') {
+      targetSupplierId = supplierId;
+    }
     let validatedRows = [];
     const activeTemplateType = templateType || 'TEMPLATE_C';
 
@@ -239,7 +245,7 @@ exports.updateRates = async (req, res) => {
         .map(row => ({
           from: (row.from || '').trim(),
           to: (row.to || '').trim(),
-          vehicleType: row.vehicleType || 'Tata Ace',
+          vehicleType: row.vehicleType || 'Van (or Eeco)',
           billingType: row.billingType || 'Fixed',
           fixedKms: Number(row.fixedKms) || 0,
           rate12h: Number(row.rate12h) || 0,
@@ -278,7 +284,10 @@ exports.updateRates = async (req, res) => {
           rate14ft: Number(row.rate14ft) || 0,
           rate17ft: Number(row.rate17ft) || 0,
           rate20ft: Number(row.rate20ft) || 0,
-          rate32ft: Number(row.rate32ft) || 0,
+          rate32ft7ton: Number(row.rate32ft7ton) || 0,
+          rate32ft9ton: Number(row.rate32ft9ton) || 0,
+          rate32ft10ton: Number(row.rate32ft10ton) || 0,
+          rate32ft15ton: Number(row.rate32ft15ton) || 0,
           detentionCostPerDay: Number(row.detentionCostPerDay) || 0,
           localPointCharges: Number(row.localPointCharges) || 0,
           outOfStatePointCharges: Number(row.outOfStatePointCharges) || 0,
@@ -289,27 +298,46 @@ exports.updateRates = async (req, res) => {
       for (const row of validatedRows) {
         if (
           row.tataAceRate < 0 || row.tata407Rate < 0 || row.rate14ft < 0 || row.rate17ft < 0 ||
-          row.rate20ft < 0 || row.rate32ft < 0 || row.detentionCostPerDay < 0 ||
+          row.rate20ft < 0 || row.rate32ft7ton < 0 || row.rate32ft9ton < 0 || 
+          row.rate32ft10ton < 0 || row.rate32ft15ton < 0 || row.detentionCostPerDay < 0 ||
           row.localPointCharges < 0 || row.outOfStatePointCharges < 0
         ) {
           return res.status(400).json({ message: 'All numeric values for zone rates must be non-negative.' });
         }
       }
-    } else if (activeTemplateType === 'TEMPLATE_C') {
-      if (basePricePerKg !== undefined && Number(basePricePerKg) < 0) {
-        return res.status(400).json({ message: 'Base Price Per KG must be non-negative.' });
-      }
-      if (volumetricDivisor !== undefined && Number(volumetricDivisor) < 0) {
-        return res.status(400).json({ message: 'Volumetric Divisor must be non-negative.' });
-      }
-      if (fuelSurchargeRate !== undefined && Number(fuelSurchargeRate) < 0) {
-        return res.status(400).json({ message: 'Fuel Surcharge Rate must be non-negative.' });
+    } else if (activeTemplateType === 'TEMPLATE_D' && Array.isArray(rows)) {
+      validatedRows = rows
+        .map(row => ({
+          buVertical: (row.buVertical || '').trim(),
+          rateType: row.rateType || 'Regular',
+          vehicleType: row.vehicleType || 'TATA Ace',
+          origin: (row.origin || '').trim(),
+          fuelRate: Number(row.fuelRate) || 0,
+          agreedDays: Number(row.agreedDays) || 0,
+          deploymentHour: Number(row.deploymentHour) || 0,
+          fixKm: Number(row.fixKm) || 0,
+          rateAtFixKm: Number(row.rateAtFixKm) || 0,
+          extraKmRate: Number(row.extraKmRate) || 0,
+          extraHourRate: Number(row.extraHourRate) || 0,
+          startEffectiveDate: (row.startEffectiveDate || '').trim(),
+          expiryDate: (row.expiryDate || '').trim(),
+        }))
+        .filter(row => row.origin); // require at least origin
+
+      // Validate non-negative numbers
+      for (const row of validatedRows) {
+        if (
+          row.fuelRate < 0 || row.agreedDays < 0 || row.deploymentHour < 0 ||
+          row.fixKm < 0 || row.rateAtFixKm < 0 || row.extraKmRate < 0 || row.extraHourRate < 0
+        ) {
+          return res.status(400).json({ message: 'All numeric values for dedicated deployment must be non-negative.' });
+        }
       }
     }
 
-    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId });
+    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId, supplierId: targetSupplierId });
     if (!rateCard) {
-      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId });
+      rateCard = new RateCard({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId, supplierId: targetSupplierId });
     }
 
     // Ensure rows is an object map to preserve different template configurations
@@ -317,7 +345,8 @@ exports.updateRates = async (req, res) => {
       const oldRows = Array.isArray(rateCard.rows) ? rateCard.rows : [];
       rateCard.rows = {
         TEMPLATE_A: rateCard.templateType === 'TEMPLATE_A' ? oldRows : [],
-        TEMPLATE_B: rateCard.templateType === 'TEMPLATE_B' ? oldRows : []
+        TEMPLATE_B: rateCard.templateType === 'TEMPLATE_B' ? oldRows : [],
+        TEMPLATE_D: rateCard.templateType === 'TEMPLATE_D' ? oldRows : []
       };
     }
 
@@ -328,10 +357,9 @@ exports.updateRates = async (req, res) => {
     } else if (activeTemplateType === 'TEMPLATE_B') {
       rateCard.rows.TEMPLATE_B = validatedRows;
       rateCard.markModified('rows');
-    } else {
-      if (basePricePerKg !== undefined) rateCard.basePricePerKg = Number(basePricePerKg);
-      if (volumetricDivisor !== undefined) rateCard.volumetricDivisor = Number(volumetricDivisor);
-      if (fuelSurchargeRate !== undefined) rateCard.fuelSurchargeRate = Number(fuelSurchargeRate);
+    } else if (activeTemplateType === 'TEMPLATE_D') {
+      rateCard.rows.TEMPLATE_D = validatedRows;
+      rateCard.markModified('rows');
     }
 
     await rateCard.save();
@@ -344,15 +372,24 @@ exports.updateRates = async (req, res) => {
 
 exports.getRates = async (req, res) => {
   try {
-    const { companyId } = req.query;
-    const targetCompanyId = (companyId && companyId !== 'MAIN' && companyId !== req.user.tenantId.toString()) ? companyId : null;
+    const { companyId, supplierId } = req.query;
+    let targetCompanyId = null;
+    let targetSupplierId = null;
 
-    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId });
+    if (companyId && companyId !== 'MAIN' && companyId !== req.user.tenantId.toString()) {
+      targetCompanyId = companyId;
+    }
+    if (supplierId && supplierId !== 'NONE') {
+      targetSupplierId = supplierId;
+    }
+
+    let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId, supplierId: targetSupplierId });
     if (!rateCard) {
       rateCard = new RateCard({
         type: 'GLOBAL',
         tenantId: req.user.tenantId,
         companyId: targetCompanyId,
+        supplierId: targetSupplierId,
         templateType: 'TEMPLATE_C',
         basePricePerKg: 10,
         volumetricDivisor: 5000,

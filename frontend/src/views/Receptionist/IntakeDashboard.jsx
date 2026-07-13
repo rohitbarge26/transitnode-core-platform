@@ -399,7 +399,7 @@ const IntakeDashboard = () => {
   `;
 
   return (
-    <div className="w-full max-w-7xl mx-auto mt-6 animate-fade-in pb-12">
+    <div className="w-full max-w-7xl mx-auto mt-6 animate-fade-in pb-6 sm:pb-8 md:pb-12">
       
       {/* Header Area */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -432,7 +432,7 @@ const IntakeDashboard = () => {
           {/* Glowing background effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
           
-          <div className="relative bg-[#111827] border border-gray-700 p-8 rounded-2xl shadow-2xl">
+          <div className="relative bg-[#111827] border border-gray-700 p-4 sm:p-6 md:p-8 rounded-2xl shadow-2xl">
             {error && (
               <div className="bg-red-500 bg-opacity-10 border-l-4 border-red-500 text-red-400 p-4 rounded mb-8 animate-slide-in">
                 <p className="font-bold">Transmission Error</p>
@@ -444,7 +444,7 @@ const IntakeDashboard = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Sender Section */}
-                <div className="space-y-4 bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
+                <div className="space-y-4 bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-1.5 bg-cyan-500 bg-opacity-20 rounded-md text-cyan-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -485,7 +485,7 @@ const IntakeDashboard = () => {
                 </div>
 
                 {/* Receiver Section */}
-                <div className="space-y-4 bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
+                <div className="space-y-4 bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-1.5 bg-purple-500 bg-opacity-20 rounded-md text-purple-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -543,7 +543,7 @@ const IntakeDashboard = () => {
               </div>
 
               {/* Transport Logistics */}
-              <div className="bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
+              <div className="bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
                  <div className="flex items-center gap-3 mb-6">
                     <div className="p-1.5 bg-blue-500 bg-opacity-20 rounded-md text-blue-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
@@ -630,7 +630,7 @@ const IntakeDashboard = () => {
               </div>
 
               {/* Cargo & Invoices Specifications Block */}
-              <div className="bg-gray-800 bg-opacity-30 p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300 space-y-6">
+              <div className="bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300 space-y-6">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-1.5 bg-pink-500 bg-opacity-20 rounded-md text-pink-400">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
@@ -723,7 +723,7 @@ const IntakeDashboard = () => {
 
         {/* Dynamic Sidebar */}
         <div className="flex flex-col max-h-[850px]">
-          <div className="bg-[#111827] border border-gray-700 p-6 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden">
+          <div className="bg-[#111827] border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">

@@ -36,7 +36,7 @@ const PricingTruckCard = ({
   checkIconColor = "text-amber-500"
 }) => {
   return (
-    <div className="relative w-full max-w-5xl mx-auto my-8 pb-12 group transition-all duration-500 hover:-translate-y-2">
+    <div className="relative w-full max-w-5xl mx-auto my-8 pb-6 sm:pb-8 md:pb-12 group transition-all duration-500 hover:-translate-y-2">
       {/* Semi-Truck Chassis / Shadow Line */}
       <div className="absolute bottom-6 left-8 right-8 h-2.5 bg-slate-900/40 rounded-full blur-md opacity-60 z-0 transition-all duration-500 group-hover:scale-x-[1.02] group-hover:opacity-80"></div>
 
@@ -59,7 +59,7 @@ const PricingTruckCard = ({
       <div className="relative z-10 w-full flex flex-col lg:flex-row lg:items-stretch lg:space-x-6">
         
         {/* Left Panel: The Trailer (Features & CTA) */}
-        <div className="flex-1 bg-gradient-to-r from-slate-900 to-slate-950 p-8 lg:p-10 flex flex-col justify-between z-10 rounded-3xl border border-slate-800 shadow-xl transition-colors duration-550 group-hover:border-slate-700/80 backdrop-blur-xl">
+        <div className="flex-1 bg-gradient-to-r from-slate-900 to-slate-950 p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col justify-between z-10 rounded-3xl border border-slate-800 shadow-xl transition-colors duration-550 group-hover:border-slate-700/80 backdrop-blur-xl">
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <span className={`h-2.5 w-8 ${cargoLineColor} rounded-full transition-all duration-500 group-hover:w-12`}></span>
@@ -71,7 +71,7 @@ const PricingTruckCard = ({
               {description}
             </p>
             
-            <div className="border-t border-slate-800/80 pt-6">
+            <div className="border-t border-slate-800/80 pt-3 sm:pt-4 md:pt-6">
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {features.map((feature, idx) => (
                   <li key={idx} className="flex items-start text-slate-300 text-sm transition-colors duration-300 hover:text-slate-100">
@@ -85,13 +85,13 @@ const PricingTruckCard = ({
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="mt-8 pt-3 sm:pt-4 md:pt-6 border-t border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <p className="text-xs text-slate-500 italic max-w-xs leading-relaxed">
               Includes full localized driver app access and direct corporate Tally ERP export files.
             </p>
             <button
               onClick={onCtaClick}
-              className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold px-8 py-4 rounded-xl transition-all duration-300 shadow-md active:scale-98 whitespace-nowrap text-sm tracking-wide"
+              className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold px-4 sm:px-6 md:px-8 py-4 rounded-xl transition-all duration-300 shadow-md active:scale-98 whitespace-nowrap text-sm tracking-wide"
             >
               {ctaText}
             </button>
@@ -99,7 +99,7 @@ const PricingTruckCard = ({
         </div>
 
         {/* Right Panel: The Cabin (Pricing & Tier) with Aerodynamic slope */}
-        <div className={`w-full lg:w-72 ${cabinColor} relative flex flex-col justify-center items-center p-8 lg:p-10 ${textColor} text-center select-none min-h-[250px] lg:min-h-full rounded-3xl lg:rounded-l-2xl lg:rounded-r-[48px] lg:rounded-tr-[115px] border ${accentBorderColor} shadow-xl overflow-hidden transition-all duration-500`}>
+        <div className={`w-full lg:w-72 ${cabinColor} relative flex flex-col justify-center items-center p-4 sm:p-6 md:p-8 lg:p-10 ${textColor} text-center select-none min-h-[250px] lg:min-h-full rounded-3xl lg:rounded-l-2xl lg:rounded-r-[48px] lg:rounded-tr-[115px] border ${accentBorderColor} shadow-xl overflow-hidden transition-all duration-500`}>
           
           {/* Aerodynamic windshield glass (Top Right) */}
           <div 

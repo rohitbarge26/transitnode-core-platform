@@ -4,6 +4,7 @@ const rateCardSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', default: null, index: true },
+    supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', default: null, index: true },
     type: {
       type: String,
       default: 'GLOBAL',
@@ -11,8 +12,8 @@ const rateCardSchema = new mongoose.Schema(
     },
     templateType: {
       type: String,
-      enum: ['TEMPLATE_A', 'TEMPLATE_B', 'TEMPLATE_C'],
-      default: 'TEMPLATE_C',
+      enum: ['TEMPLATE_A', 'TEMPLATE_B', 'TEMPLATE_D'],
+      default: 'TEMPLATE_A',
       required: true,
     },
     rows: {

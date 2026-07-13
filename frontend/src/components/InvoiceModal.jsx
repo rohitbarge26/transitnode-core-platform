@@ -86,7 +86,7 @@ const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
       <div className="bg-gray-100 text-black rounded-lg shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col relative print:static print:overflow-visible print:max-w-none print:shadow-none print:w-full print:bg-white">
         
         {/* Header - Not printed */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white print:hidden">
+        <div className="px-3 sm:px-4 md:px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white print:hidden">
           <h2 className="text-xl font-bold text-gray-800">Print Invoice</h2>
           <button 
             onClick={onClose}
@@ -97,7 +97,7 @@ const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
         </div>
 
         {/* Scrollable Preview Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 print:p-0 print:overflow-visible print:bg-white">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 print:p-0 print:overflow-visible print:bg-white">
           {/* UI PREVIEW - Visible on screen, hidden during print */}
           <div className="bg-white shadow-md mx-auto max-w-full overflow-hidden print:hidden" style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
             {content}
@@ -113,10 +113,10 @@ const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
         )}
 
         {/* Footer Actions - Not printed */}
-        <div className="px-6 py-4 bg-white border-t border-gray-200 flex justify-end gap-4 print:hidden shrink-0">
+        <div className="px-3 sm:px-4 md:px-6 py-4 bg-white border-t border-gray-200 flex justify-end gap-4 print:hidden shrink-0">
           <button 
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium transition-colors"
+            className="px-3 sm:px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium transition-colors"
           >
             Cancel
           </button>
@@ -128,7 +128,7 @@ const InvoiceModal = ({ invoice, orientation = 'landscape', onClose }) => {
               window.print();
               document.title = originalTitle;
             }}
-            className="px-6 py-2 bg-[#00a651] text-white rounded-md hover:bg-[#008f45] font-bold shadow-md hover:shadow-lg transition-all"
+            className="px-3 sm:px-4 md:px-6 py-2 bg-[#00a651] text-white rounded-md hover:bg-[#008f45] font-bold shadow-md hover:shadow-lg transition-all"
           >
             Print Invoice
           </button>

@@ -57,7 +57,7 @@ const SupplierManagement = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
       <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Supplier Management</h2>
@@ -78,7 +78,7 @@ const SupplierManagement = () => {
       )}
 
       {showForm && (
-        <div className="bg-slate-50 p-6 rounded-lg mb-6 border border-slate-200">
+        <div className="bg-slate-50 p-3 sm:p-4 md:p-6 rounded-lg mb-6 border border-slate-200">
           <h3 className="text-lg font-bold text-slate-800 mb-4">New Supplier Details</h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -125,24 +125,24 @@ const SupplierManagement = () => {
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Supplier Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">GSTIN</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">State</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date Added</th>
+              <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Supplier Name</th>
+              <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">GSTIN</th>
+              <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">State</th>
+              <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date Added</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
             {suppliers.length === 0 ? (
               <tr>
-                <td colSpan="4" className="px-6 py-8 text-center text-sm text-slate-500">No suppliers found. Click "+ Add Supplier" to create one.</td>
+                <td colSpan="4" className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 text-center text-sm text-slate-500">No suppliers found. Click "+ Add Supplier" to create one.</td>
               </tr>
             ) : (
               suppliers.map(s => (
                 <tr key={s._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{s.supplierName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.gstin || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.state || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{new Date(s.createdAt).toLocaleDateString()}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{s.supplierName}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.gstin || '-'}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{s.state || '-'}</td>
+                  <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{new Date(s.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))
             )}

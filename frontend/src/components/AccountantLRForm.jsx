@@ -41,7 +41,7 @@ const AccountantLRForm = ({
         <span>💡 Accountant Mode: Modify charges below. Sub-total, GST, and Grand Total will calculate live.</span>
       </div>
 
-      <div className="border-[1.5px] border-black grid grid-cols-12">
+      <div className="border-[1.5px] border-black grid grid-cols-1 md:grid-cols-12">
         {/* HEADER SECTION */}
         <div className="col-span-4 border-b border-r border-black p-2 flex items-center gap-2">
           <div className="bg-black text-white p-1 rounded font-black text-xs tracking-tighter">
@@ -65,7 +65,7 @@ const AccountantLRForm = ({
         
         <div className="col-span-2 border-b border-r border-black grid grid-rows-2">
           <div className="p-1 border-b border-black font-bold text-[9px] uppercase bg-gray-50">Booking Date & Time</div>
-          <div className="p-1 grid grid-cols-2 text-[10px]">
+          <div className="p-1 grid grid-cols-1 sm:grid-cols-2 text-[10px]">
             <div>DATE: <span className="font-bold font-mono">{bookingDate}</span></div>
             <div className="border-l border-black pl-1">TIME: <span className="font-bold font-mono">{bookingTime}</span></div>
           </div>
@@ -89,7 +89,7 @@ const AccountantLRForm = ({
         </div>
 
         {/* SHIPPER & RECIPIENT DETAILS */}
-        <div className="col-span-6 border-b border-r border-black grid grid-cols-12">
+        <div className="col-span-6 border-b border-r border-black grid grid-cols-1 md:grid-cols-12">
           <div className="col-span-12 bg-gray-100 p-1 font-bold border-b border-black uppercase text-[9px]">
             SHIPPER'S DETAILS (Consignor)
           </div>
@@ -140,7 +140,7 @@ const AccountantLRForm = ({
           </div>
         </div>
 
-        <div className="col-span-6 border-b border-black grid grid-cols-12">
+        <div className="col-span-6 border-b border-black grid grid-cols-1 md:grid-cols-12">
           <div className="col-span-12 bg-gray-100 p-1 font-bold border-b border-black uppercase text-[9px]">
             RECIPIENT'S DETAILS (Consignee)
           </div>
@@ -192,7 +192,7 @@ const AccountantLRForm = ({
         </div>
 
         {/* CARGO & PHYSICAL SPECIFICATIONS */}
-        <div className="col-span-4 border-b border-r border-black grid grid-cols-2">
+        <div className="col-span-4 border-b border-r border-black grid grid-cols-1 sm:grid-cols-2">
           <div className="p-1 border-r border-black">
             <span className="text-[8px] block text-gray-500 uppercase">Actual Wt. (kg)</span>
             <span className="font-bold text-xs font-mono">{invoice.logistics?.package?.actualWeight || invoice.logistics?.package?.weight_kg || '1800'}</span>
@@ -247,7 +247,7 @@ const AccountantLRForm = ({
         </div>
 
         {/* LOWER BODY */}
-        <div className="col-span-8 border-r border-black grid grid-cols-12">
+        <div className="col-span-8 border-r border-black grid grid-cols-1 md:grid-cols-12">
           <div className="col-span-12 bg-gray-100 p-1 font-bold border-b border-black uppercase text-[9px]">
             Package Information
           </div>
@@ -279,7 +279,7 @@ const AccountantLRForm = ({
             <p className="font-mono text-[9px] text-gray-800 font-bold">{invoice.logistics?.transport?.commodityType || 'N/A'}</p>
           </div>
 
-          <div className="col-span-12 grid grid-cols-12">
+          <div className="col-span-12 grid grid-cols-1 md:grid-cols-12">
             <div className="col-span-4 p-2 border-r border-b border-black text-[7px] leading-tight">
               <h4 className="font-bold uppercase text-[8px] mb-1">Terms</h4>
               <p>Subject to local transport terms and conditions.</p>

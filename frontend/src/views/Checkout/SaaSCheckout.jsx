@@ -62,7 +62,7 @@ const SaaSCheckout = () => {
   if (paymentSuccess) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white/80 backdrop-blur-xl border border-slate-200 rounded-3xl p-8 shadow-xl text-center animate-in fade-in zoom-in duration-500">
+        <div className="max-w-md w-full bg-white/80 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl text-center animate-in fade-in zoom-in duration-500">
           <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
@@ -101,7 +101,7 @@ const SaaSCheckout = () => {
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Left Panel - Order Summary */}
-        <div className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-3xl p-8 shadow-sm h-fit">
+        <div className="bg-white/80 backdrop-blur-xl border border-slate-200 rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm h-fit">
           <h2 className="text-2xl font-bold text-slate-900 mb-8">Order Summary</h2>
           
           <div className="mb-8">
@@ -133,7 +133,7 @@ const SaaSCheckout = () => {
             </div>
           </div>
           
-          <div className="mt-12 bg-slate-100/50 p-6 rounded-2xl border border-slate-200/50">
+          <div className="mt-12 bg-slate-100/50 p-3 sm:p-4 md:p-6 rounded-2xl border border-slate-200/50">
             <h4 className="font-bold text-slate-900 mb-4">Payment Summary</h4>
             <div className="flex justify-between items-center mb-2 text-sm">
               <span className="text-slate-600">Product</span>
@@ -155,7 +155,7 @@ const SaaSCheckout = () => {
           <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Complete Your Purchase</h2>
           <p className="text-lg text-slate-600 mb-8">Total Amount: <span className="font-bold text-slate-900">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
 
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden p-8">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden p-4 sm:p-6 md:p-8">
             {/* Tabs */}
             <div className="flex space-x-2 border-b border-slate-200 mb-8">
               <button 
@@ -193,7 +193,7 @@ const SaaSCheckout = () => {
                     <label className="block text-sm font-medium text-slate-700 mb-1">Card Number</label>
                     <input type="text" required className="w-full border border-slate-300 bg-white text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all" placeholder="**** **** **** 4291" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Expiry (MM/YY)</label>
                       <input type="text" required className="w-full border border-slate-300 bg-white text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all" placeholder="11/27" />
@@ -206,7 +206,7 @@ const SaaSCheckout = () => {
                 </div>
               ) : (
                 <div className="space-y-5 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 sm:p-4 md:p-6">
                     <label className="block text-sm font-bold text-slate-800 mb-3 flex items-center">
                       <span className="w-4 h-4 mr-2 bg-gradient-to-br from-orange-400 to-green-500 rounded-sm inline-block"></span>
                       Pay via UPI

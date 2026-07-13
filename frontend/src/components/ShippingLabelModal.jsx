@@ -11,7 +11,7 @@ const ShippingLabelModal = ({ shipment, onClose }) => {
       <div className="bg-white text-black rounded-lg shadow-2xl w-full max-w-lg overflow-hidden relative print:static print:overflow-visible print:max-w-none print:shadow-none print:w-full">
         
         {/* Header - Not printed */}
-        <div className="bg-gray-100 px-6 py-4 flex justify-between items-center border-b border-gray-200 print:hidden">
+        <div className="bg-gray-100 px-3 sm:px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-200 print:hidden">
           <h3 className="text-lg font-bold text-gray-800">Print Shipping Label</h3>
           <button 
             onClick={onClose}
@@ -35,7 +35,7 @@ const ShippingLabelModal = ({ shipment, onClose }) => {
         )}
 
         {/* Footer Actions - Not printed */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-4 print:hidden">
+        <div className="px-3 sm:px-4 md:px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-4 print:hidden">
           <button 
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 transition"
@@ -50,7 +50,7 @@ const ShippingLabelModal = ({ shipment, onClose }) => {
               window.print();
               document.title = originalTitle;
             }}
-            className="px-6 py-2 bg-green-600 text-white font-bold rounded shadow hover:bg-green-700 transition"
+            className="px-3 sm:px-4 md:px-6 py-2 bg-green-600 text-white font-bold rounded shadow hover:bg-green-700 transition"
           >
             Print Label
           </button>

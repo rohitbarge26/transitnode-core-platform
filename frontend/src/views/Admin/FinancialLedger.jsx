@@ -107,11 +107,11 @@ const FinancialLedger = ({ planType }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] p-8 text-white font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#0d1117] p-4 sm:p-6 md:p-8 text-white font-sans selection:bg-indigo-500/30">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gray-900/50 p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gray-900/50 p-4 sm:p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-xl">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
               Financial Engine
@@ -121,7 +121,7 @@ const FinancialLedger = ({ planType }) => {
         </div>
         
         {/* Financial Data Synchronization Console */}
-        <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-3 sm:p-4 md:p-6 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="bg-indigo-500/20 p-3 rounded-xl border border-indigo-500/30 flex-shrink-0">
@@ -176,14 +176,14 @@ const FinancialLedger = ({ planType }) => {
         <div className="flex gap-4 border-b border-white/10 pb-4">
           <button 
             onClick={() => setActiveTab('LEDGER')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'LEDGER' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            className={`px-3 sm:px-4 md:px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'LEDGER' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
           >
             Ledger & P&L
           </button>
           {planType !== 'TRIAL' && (
             <button 
               onClick={() => setActiveTab('PAYROLL')}
-              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'PAYROLL' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`px-3 sm:px-4 md:px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'PAYROLL' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
               Payroll Processing
             </button>
@@ -194,7 +194,7 @@ const FinancialLedger = ({ planType }) => {
         {activeTab === 'LEDGER' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Trial Balance Table */}
-            <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
+            <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-3 sm:p-4 md:p-6 backdrop-blur-md">
               <h2 className="text-2xl font-bold mb-6 text-indigo-400 flex items-center gap-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 Live Trial Balance
@@ -222,7 +222,7 @@ const FinancialLedger = ({ planType }) => {
             </div>
 
             {/* P&L Snapshot */}
-            <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
+            <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-3 sm:p-4 md:p-6 backdrop-blur-md">
               <h2 className="text-2xl font-bold mb-6 text-rose-400 flex items-center gap-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 Profit & Loss Snapshot
@@ -263,7 +263,7 @@ const FinancialLedger = ({ planType }) => {
 
         {/* Payroll View */}
         {activeTab === 'PAYROLL' && (
-          <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-3 sm:p-4 md:p-6 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Filter and Actions Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
               <h2 className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
@@ -357,7 +357,7 @@ const FinancialLedger = ({ planType }) => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={selectedMonth === 'All' ? 8 : 7} className="py-8 text-center text-gray-500">
+                            <td colSpan={selectedMonth === 'All' ? 8 : 7} className="py-4 sm:py-6 md:py-8 text-center text-gray-500">
                               No payroll records found for this period.
                             </td>
                           </tr>

@@ -45,7 +45,7 @@ const OutstandingDashboard = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="glass-panel p-6 flex flex-col justify-between">
+        <div className="glass-panel p-3 sm:p-4 md:p-6 flex flex-col justify-between">
           <span className="text-xs font-bold text-yellow-500 uppercase tracking-wider">Total Outstanding</span>
           <h3 className="text-3xl font-mono font-bold text-white mt-2">
             ₹{totalReceivables.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -53,7 +53,7 @@ const OutstandingDashboard = () => {
           <p className="text-[10px] text-gray-500 mt-1">Across all unbilled daily LRs and consolidated invoices</p>
         </div>
 
-        <div className="glass-panel p-6 flex flex-col justify-between">
+        <div className="glass-panel p-3 sm:p-4 md:p-6 flex flex-col justify-between">
           <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Overdue (&gt; 30 Days)</span>
           <h3 className="text-3xl font-mono font-bold text-red-400 mt-2">
             ₹{totalOverdue30.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -61,7 +61,7 @@ const OutstandingDashboard = () => {
           <p className="text-[10px] text-gray-500 mt-1">Outstanding amounts aged beyond 30-day billing cycle</p>
         </div>
 
-        <div className="glass-panel p-6 flex flex-col justify-between">
+        <div className="glass-panel p-3 sm:p-4 md:p-6 flex flex-col justify-between">
           <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Top Debtor</span>
           <h3 className="text-xl font-bold text-white mt-2 truncate">
             {topDebtorObj ? topDebtorObj.clientName : 'N/A'}
@@ -73,7 +73,7 @@ const OutstandingDashboard = () => {
       </div>
 
       {/* Main Table Card */}
-      <div className="glass-panel p-6">
+      <div className="glass-panel p-3 sm:p-4 md:p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-lg font-bold text-white">Client Aging Report</h3>
@@ -88,9 +88,9 @@ const OutstandingDashboard = () => {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-500 animate-pulse">Building outstanding aging ledger...</div>
+          <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500 animate-pulse">Building outstanding aging ledger...</div>
         ) : report.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">No outstanding customer invoices found. All settled!</div>
+          <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500">No outstanding customer invoices found. All settled!</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">

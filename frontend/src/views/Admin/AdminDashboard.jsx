@@ -67,13 +67,22 @@ const AdminDashboard = () => {
 
   // Forms State
   const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION_EXECUTIVE' });
-  const [rateForm, setRateForm] = useState({ basePricePerKg: '', volumetricDivisor: '', fuelSurchargeRate: '' });
   const [selectedCompanyId, setSelectedCompanyId] = useState('MAIN');
-  const [templateType, setTemplateType] = useState('TEMPLATE_C');
+  const [selectedSupplierId, setSelectedSupplierId] = useState('NONE');
+  const [templateType, setTemplateType] = useState('TEMPLATE_A');
   const [rows, setRows] = useState([]);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loadedRateCard, setLoadedRateCard] = useState(null);
-  const [workingRows, setWorkingRows] = useState({ TEMPLATE_A: [], TEMPLATE_B: [] });
+  const [workingRows, setWorkingRows] = useState({ TEMPLATE_A: [], TEMPLATE_B: [], TEMPLATE_D: [] });
+  
+  const initialTemplateAForm = { from: '', to: '', vehicleType: 'Van (or Eeco)', billingType: 'Fixed', fixedKms: '', rate12h: '', rate24h: '', extraKmRate: '', extraHourRate: '', detentionCharges: '' };
+  const initialTemplateBForm = { storeCode: '', storeName: '', location: '', city: '', state: '', zone: '', tataAceRate: '', tata407Rate: '', rate14ft: '', rate17ft: '', rate20ft: '', rate32ft7ton: '', rate32ft9ton: '', rate32ft10ton: '', rate32ft15ton: '', detentionCostPerDay: '', localPointCharges: '', outOfStatePointCharges: '' };
+  const initialTemplateDForm = { buVertical: '', rateType: 'Regular', vehicleType: 'TATA Ace', origin: '', fuelRate: '', agreedDays: '26', deploymentHour: '12', fixKm: '', rateAtFixKm: '', extraKmRate: '', extraHourRate: '', startEffectiveDate: '', expiryDate: '' };
+  const [templateAForm, setTemplateAForm] = useState(initialTemplateAForm);
+  const [templateBForm, setTemplateBForm] = useState(initialTemplateBForm);
+  const [templateDForm, setTemplateDForm] = useState(initialTemplateDForm);
+  const [editingRowIndex, setEditingRowIndex] = useState(null);
+
   const [deviceForm, setDeviceForm] = useState({ 
     vehicleNumber: '', 
     vehicleType: '14-Ft Container', 
@@ -97,6 +106,7 @@ const AdminDashboard = () => {
   const [drivers, setDrivers] = useState([]);
   const [fleetAssets, setFleetAssets] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
 
   useEffect(() => {
     const allowedRoles = ['ADMIN', 'ACCOUNTANT', 'OPERATION', 'OPERATION_EXECUTIVE'];
@@ -108,6 +118,7 @@ const AdminDashboard = () => {
       fetchUsersList();
       fetchSubscription();
       fetchWorkspaces();
+      fetchSuppliers();
     }
 
     // Socket Initialization
@@ -210,15 +221,15 @@ const AdminDashboard = () => {
 
   // Sync selectedCompanyId with activeWorkspace
   useEffect(() => {
-    setSelectedCompanyId(activeWorkspace || 'MAIN');
+    setSelectedCompanyId(activeWorkspace && activeWorkspace !== 'MAIN' ? activeWorkspace : 'MAIN');
   }, [activeWorkspace]);
 
-  // Fetch rates when selectedCompanyId changes
+  // Fetch rates when selectedCompanyId or selectedSupplierId changes
   useEffect(() => {
-    if (selectedCompanyId && token) {
-      fetchRates(selectedCompanyId);
+    if (token) {
+      fetchRates(selectedCompanyId, selectedSupplierId);
     }
-  }, [selectedCompanyId, token]);
+  }, [selectedCompanyId, selectedSupplierId, token]);
 
 
 
@@ -278,42 +289,40 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchRates = async (compId) => {
+  const fetchRates = async (compId, supId) => {
     const targetCompId = compId || selectedCompanyId || 'MAIN';
+    const targetSupId = supId || selectedSupplierId || 'NONE';
     try {
       const url = user?.role === 'ADMIN'
         ? `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates`
         : `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/invoices/rates`;
       const res = await axios.get(url, {
-        params: { companyId: targetCompId },
+        params: { companyId: targetCompId, supplierId: targetSupId },
         headers: { 
           Authorization: `Bearer ${token}`,
           'x-workspace-id': activeWorkspace || 'MAIN'
         }
       });
       setLoadedRateCard(res.data);
-      const activeTemplate = res.data.templateType || 'TEMPLATE_C';
+      const activeTemplate = res.data.templateType || 'TEMPLATE_A';
       setTemplateType(activeTemplate);
 
       let rowsA = [];
       let rowsB = [];
+      let rowsD = [];
       if (res.data.rows) {
         if (Array.isArray(res.data.rows)) {
           if (activeTemplate === 'TEMPLATE_A') rowsA = res.data.rows;
           if (activeTemplate === 'TEMPLATE_B') rowsB = res.data.rows;
+          if (activeTemplate === 'TEMPLATE_D') rowsD = res.data.rows;
         } else {
           rowsA = res.data.rows.TEMPLATE_A || [];
           rowsB = res.data.rows.TEMPLATE_B || [];
+          rowsD = res.data.rows.TEMPLATE_D || [];
         }
       }
-      setWorkingRows({ TEMPLATE_A: rowsA, TEMPLATE_B: rowsB });
-      setRows(activeTemplate === 'TEMPLATE_A' ? rowsA : activeTemplate === 'TEMPLATE_B' ? rowsB : []);
-
-      setRateForm({
-        basePricePerKg: res.data.basePricePerKg || '',
-        volumetricDivisor: res.data.volumetricDivisor || '',
-        fuelSurchargeRate: res.data.fuelSurchargeRate || ''
-      });
+      setWorkingRows({ TEMPLATE_A: rowsA, TEMPLATE_B: rowsB, TEMPLATE_D: rowsD });
+      setRows(activeTemplate === 'TEMPLATE_A' ? rowsA : activeTemplate === 'TEMPLATE_B' ? rowsB : activeTemplate === 'TEMPLATE_D' ? rowsD : []);
     } catch (error) {
       console.error('Failed to fetch rates', error);
     }
@@ -379,6 +388,17 @@ const AdminDashboard = () => {
       setWorkspaces(res.data.workspaces || []);
     } catch (error) {
       console.error('Failed to fetch workspaces', error);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/suppliers`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuppliers(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch suppliers', error);
     }
   };
 
@@ -539,65 +559,106 @@ const AdminDashboard = () => {
 
   const handleTemplateTypeChange = (newType) => {
     setTemplateType(newType);
+    setEditingRowIndex(null);
+    setTemplateAForm(initialTemplateAForm);
+    setTemplateBForm(initialTemplateBForm);
+    setTemplateDForm(initialTemplateDForm);
     if (newType === 'TEMPLATE_A') {
       setRows(workingRows.TEMPLATE_A || []);
     } else if (newType === 'TEMPLATE_B') {
       setRows(workingRows.TEMPLATE_B || []);
+    } else if (newType === 'TEMPLATE_D') {
+      setRows(workingRows.TEMPLATE_D || []);
     } else {
       setRows([]);
     }
   };
 
-  const addRowTemplateA = () => {
-    const newRow = {
-      from: '',
-      to: '',
-      vehicleType: 'Tata Ace',
-      billingType: 'Fixed',
-      fixedKms: '',
-      rate12h: '',
-      rate24h: '',
-      extraKmRate: '',
-      extraHourRate: '',
-      detentionCharges: ''
-    };
-    const updated = [...rows, newRow];
+  const handleTemplateAFormChange = (e) => {
+    const { name, value } = e.target;
+    setTemplateAForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTemplateBFormChange = (e) => {
+    const { name, value } = e.target;
+    setTemplateBForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTemplateDFormChange = (e) => {
+    const { name, value } = e.target;
+    setTemplateDForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addOrUpdateRowTemplateA = () => {
+    if (!templateAForm.from || !templateAForm.to) {
+      alert("From and To are required.");
+      return;
+    }
+    const updated = [...rows];
+    if (editingRowIndex !== null) {
+      updated[editingRowIndex] = templateAForm;
+      setEditingRowIndex(null);
+    } else {
+      updated.push(templateAForm);
+    }
     setRows(updated);
     setWorkingRows(prev => ({ ...prev, TEMPLATE_A: updated }));
+    setTemplateAForm(initialTemplateAForm);
+    saveRatesToBackend(updated);
   };
 
-  const addRowTemplateB = () => {
-    const newRow = {
-      storeCode: '',
-      storeName: '',
-      location: '',
-      pincode: '',
-      city: '',
-      state: '',
-      zone: '',
-      tataAceRate: '',
-      tata407Rate: '',
-      rate14ft: '',
-      rate17ft: '',
-      rate20ft: '',
-      rate32ft: '',
-      detentionCostPerDay: '',
-      localPointCharges: '',
-      outOfStatePointCharges: ''
-    };
-    const updated = [...rows, newRow];
+  const addOrUpdateRowTemplateB = () => {
+    if (!templateBForm.storeCode || !templateBForm.storeName) {
+      alert("Store Code and Store Name are required.");
+      return;
+    }
+    const updated = [...rows];
+    if (editingRowIndex !== null) {
+      updated[editingRowIndex] = templateBForm;
+      setEditingRowIndex(null);
+    } else {
+      updated.push(templateBForm);
+    }
     setRows(updated);
     setWorkingRows(prev => ({ ...prev, TEMPLATE_B: updated }));
+    setTemplateBForm(initialTemplateBForm);
+    saveRatesToBackend(updated);
   };
 
-  const updateRowField = (index, field, value) => {
-    const updatedRows = [...rows];
-    updatedRows[index][field] = value;
-    setRows(updatedRows);
-    setWorkingRows(prev => ({
-      ...prev,
-      [templateType]: updatedRows
-    }));
+  const addOrUpdateRowTemplateD = () => {
+    if (!templateDForm.origin) {
+      alert("Origin is required.");
+      return;
+    }
+    const updated = [...rows];
+    if (editingRowIndex !== null) {
+      updated[editingRowIndex] = templateDForm;
+      setEditingRowIndex(null);
+    } else {
+      updated.push(templateDForm);
+    }
+    setRows(updated);
+    setWorkingRows(prev => ({ ...prev, TEMPLATE_D: updated }));
+    setTemplateDForm(initialTemplateDForm);
+    saveRatesToBackend(updated);
+  };
+
+  const editRow = (index) => {
+    if (templateType === 'TEMPLATE_A') {
+      setTemplateAForm(rows[index]);
+    } else if (templateType === 'TEMPLATE_B') {
+      setTemplateBForm(rows[index]);
+    } else if (templateType === 'TEMPLATE_D') {
+      setTemplateDForm(rows[index]);
+    }
+    setEditingRowIndex(index);
+  };
+
+  const cancelEdit = () => {
+    setEditingRowIndex(null);
+    setTemplateAForm(initialTemplateAForm);
+    setTemplateBForm(initialTemplateBForm);
+    setTemplateDForm(initialTemplateDForm);
   };
 
   const removeRow = (index) => {
@@ -607,20 +668,15 @@ const AdminDashboard = () => {
       ...prev,
       [templateType]: updated
     }));
+    if (editingRowIndex === index) cancelEdit();
+    saveRatesToBackend(updated);
   };
 
-  const handleUpdateRates = async (e) => {
-    e.preventDefault();
-    
+  const saveRatesToBackend = async (currentRows) => {
     // Validation
-    if (templateType === 'TEMPLATE_C') {
-      if (Number(rateForm.basePricePerKg) < 0 || Number(rateForm.volumetricDivisor) < 0 || Number(rateForm.fuelSurchargeRate) < 0) {
-        alert('Rates must be non-negative numbers.');
-        return;
-      }
-    } else if (templateType === 'TEMPLATE_A') {
+    if (templateType === 'TEMPLATE_A') {
       // Validate non-negative numbers
-      for (const r of rows) {
+      for (const r of currentRows) {
         // Skip validating completely empty rows since they will be stripped
         if (!r.from && !r.to) continue;
         if (
@@ -633,14 +689,27 @@ const AdminDashboard = () => {
       }
     } else if (templateType === 'TEMPLATE_B') {
       // Validate non-negative numbers
-      for (const r of rows) {
+      for (const r of currentRows) {
         if (!r.storeCode && !r.storeName && !r.location) continue;
         if (
           Number(r.tataAceRate) < 0 || Number(r.tata407Rate) < 0 || Number(r.rate14ft) < 0 || Number(r.rate17ft) < 0 ||
-          Number(r.rate20ft) < 0 || Number(r.rate32ft) < 0 || Number(r.detentionCostPerDay) < 0 ||
+          Number(r.rate20ft) < 0 || Number(r.rate32ft7ton) < 0 || Number(r.rate32ft9ton) < 0 || 
+          Number(r.rate32ft10ton) < 0 || Number(r.rate32ft15ton) < 0 || Number(r.detentionCostPerDay) < 0 ||
           Number(r.localPointCharges) < 0 || Number(r.outOfStatePointCharges) < 0
         ) {
           alert('All rates, costs, and charges must be non-negative numbers.');
+          return;
+        }
+      }
+    } else if (templateType === 'TEMPLATE_D') {
+      // Validate non-negative numbers
+      for (const r of currentRows) {
+        if (!r.origin) continue;
+        if (
+          Number(r.fuelRate) < 0 || Number(r.agreedDays) < 0 || Number(r.deploymentHour) < 0 ||
+          Number(r.fixKm) < 0 || Number(r.rateAtFixKm) < 0 || Number(r.extraKmRate) < 0 || Number(r.extraHourRate) < 0
+        ) {
+          alert('All rates, KMS, and hours must be non-negative numbers.');
           return;
         }
       }
@@ -649,16 +718,14 @@ const AdminDashboard = () => {
     try {
       await axios.put(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/rates/update`, {
         companyId: selectedCompanyId,
+        supplierId: selectedSupplierId,
         templateType,
-        rows,
-        basePricePerKg: rateForm.basePricePerKg,
-        volumetricDivisor: rateForm.volumetricDivisor,
-        fuelSurchargeRate: rateForm.fuelSurchargeRate
+        rows: currentRows
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Rates updated successfully');
-      fetchRates(selectedCompanyId);
+      fetchRates(selectedCompanyId, selectedSupplierId);
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update rates');
     }
@@ -854,9 +921,15 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      {/* Mobile Sidebar Toggle */}
+      <input type="checkbox" id="mobile-menu" className="hidden peer" />
+      <label htmlFor="mobile-menu" className="md:hidden fixed top-4 right-4 z-[100] p-2 bg-indigo-600 text-white rounded-lg shadow-lg cursor-pointer flex items-center justify-center">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </label>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
-        <div className="p-6">
+      <aside className="fixed inset-y-0 left-0 z-50 transform -translate-x-full peer-checked:translate-x-0 md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-slate-900 text-white flex flex-col shadow-xl flex-shrink-0 max-h-screen overflow-y-auto">
+        <div className="p-3 sm:p-4 md:p-6">
           <h1 className="text-2xl font-bold tracking-tight text-white mb-2">TransitNode</h1>
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">Command Center</p>
           
@@ -967,7 +1040,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+        <div className="p-4 sm:p-6 md:p-8">
           
           {/* Demo Mode Toggle & Banner */}
           {user?.role === 'ADMIN' && (
@@ -993,7 +1066,7 @@ const AdminDashboard = () => {
           {/* Top Metrics Bar */}
           {user?.role === 'ADMIN' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 flex flex-col transition-all hover:shadow-md">
                 <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Gross Trip Revenue</span>
                 <span className="text-3xl font-bold text-slate-900">₹{metrics.totalRevenue?.toLocaleString('en-IN') || 0}</span>
                 <div className="mt-3 text-xs font-medium text-slate-400 flex justify-between border-t border-slate-100 pt-2">
@@ -1001,15 +1074,15 @@ const AdminDashboard = () => {
                   <span>Monthly: <span className="text-indigo-600 font-bold">₹{metrics.monthlyRevenue?.toLocaleString('en-IN') || 0}</span></span>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 flex flex-col transition-all hover:shadow-md">
                 <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Net Fleet Margin</span>
                 <span className="text-3xl font-bold text-emerald-600">{metrics.netFleetMargin}%</span>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 flex flex-col transition-all hover:shadow-md">
                 <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Active Fleet on Road</span>
                 <span className="text-3xl font-bold text-indigo-600">{metrics.activeFleet}</span>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col transition-all hover:shadow-md">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 flex flex-col transition-all hover:shadow-md">
                 <span className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">In Maintenance</span>
                 <span className="text-3xl font-bold text-amber-500">{metrics.maintenanceFleet}</span>
               </div>
@@ -1020,7 +1093,7 @@ const AdminDashboard = () => {
           {activeTab === 'PROFILE' && (
             <div className="space-y-6 max-w-2xl">
               <h2 className="text-xl font-bold text-slate-800">My Profile</h2>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1045,7 +1118,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="pt-4">
-                    <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium shadow-sm">
+                    <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white py-2 px-3 sm:px-4 md:px-6 rounded-md hover:bg-indigo-700 transition font-medium shadow-sm">
                       Save Profile Updates
                     </button>
                   </div>
@@ -1073,7 +1146,7 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Area Chart - Full Width Top Row */}
-                <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-shadow">
+                <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 relative overflow-hidden group hover:shadow-md transition-shadow">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                   <h3 className="text-sm font-bold text-slate-700 mb-6 uppercase tracking-wider flex items-center">
                     <span className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
@@ -1122,7 +1195,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Bar Chart - Bottom Left */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden hover:shadow-md transition-shadow">
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 relative overflow-hidden hover:shadow-md transition-shadow">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-400 to-blue-500"></div>
                   <h3 className="text-sm font-bold text-slate-700 mb-6 uppercase tracking-wider flex items-center">
                     <span className="w-2 h-2 rounded-full bg-sky-500 mr-2"></span>
@@ -1145,7 +1218,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Donut Chart - Bottom Right */}
-                <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden flex flex-col justify-center items-center hover:shadow-md transition-shadow">
+                <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 relative overflow-hidden flex flex-col justify-center items-center hover:shadow-md transition-shadow">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
                   <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider w-full flex items-center">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
@@ -1182,7 +1255,7 @@ const AdminDashboard = () => {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* User Provisioning */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Provision New User</h3>
                   <form onSubmit={handleCreateUser} className="space-y-4" autoComplete="off">
                     <div>
@@ -1214,7 +1287,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Employee Verification Form */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Employee Verification</h3>
                   <form onSubmit={handleVerifyEmployee} className="space-y-4">
                     <div>
@@ -1243,25 +1316,41 @@ const AdminDashboard = () => {
               </div>
 
               {/* Rate Card Configuration */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 space-y-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 space-y-6">
                 <div className="border-b border-slate-100 pb-4">
                   <h3 className="text-lg font-bold text-slate-800">Rate Card Configuration</h3>
                   <p className="text-sm text-slate-500 mt-1">Configure client-specific pricing tables for automated billing workflows.</p>
                 </div>
-                <form onSubmit={handleUpdateRates} className="space-y-6">
+                <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Select Client / Company</label>
-                      <select 
-                        value={selectedCompanyId} 
-                        onChange={e => setSelectedCompanyId(e.target.value)} 
-                        className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
-                      >
-                        <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'} (Main HQ)</option>
-                        {workspaces.filter(ws => !ws.isMainTenant).map(ws => (
-                          <option key={ws._id} value={ws._id}>{ws.companyName}</option>
-                        ))}
-                      </select>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Client / Company</label>
+                        <select 
+                          value={selectedCompanyId} 
+                          onChange={e => setSelectedCompanyId(e.target.value)} 
+                          className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                        >
+                          <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'} (Main HQ)</option>
+                          {workspaces.filter(ws => !ws.isMainTenant).map(ws => (
+                            <option key={ws._id} value={ws._id}>{ws.companyName}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Supplier</label>
+                        <select 
+                          value={selectedSupplierId} 
+                          onChange={e => setSelectedSupplierId(e.target.value)} 
+                          className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                        >
+                          <option value="NONE">-- No Supplier --</option>
+                          {suppliers.map(sup => (
+                            <option key={sup._id} value={sup._id}>{sup.supplierName}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div>
@@ -1273,7 +1362,7 @@ const AdminDashboard = () => {
                       >
                         <option value="TEMPLATE_A">Route-Based Pricing (Point-to-Point)</option>
                         <option value="TEMPLATE_B">Store Hub / Zone Matrix Pricing</option>
-                        <option value="TEMPLATE_C">Flat Rate Pricing (Weight/Volume)</option>
+                        <option value="TEMPLATE_D">Dedicated Deployment Pricing</option>
                       </select>
                     </div>
                   </div>
@@ -1281,157 +1370,135 @@ const AdminDashboard = () => {
                   {/* Render Template A */}
                   {templateType === 'TEMPLATE_A' && (
                     <div className="space-y-4 pt-4 border-t border-slate-100">
-                      <div className="flex justify-between items-center">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Route Row' : 'Add Route Row'}</h4>
+                          {editingRowIndex !== null && (
+                            <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">From (Origin)*</label>
+                            <input type="text" name="from" value={templateAForm.from} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 focus:border-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">To (Destination)*</label>
+                            <input type="text" name="to" value={templateAForm.to} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 focus:border-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Vehicle Type</label>
+                            <select name="vehicleType" value={templateAForm.vehicleType} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              {[
+                                'Van (or Eeco)', 
+                                'Mini Truck (Ace)', 
+                                'Pickup Truck', 
+                                'Truck (407)', 
+                                'Truck 14ft', 
+                                'Large Truck 17ft', 
+                                'Large Truck 19ft/20ft', 
+                                'Large Truck 22ft/24ft', 
+                                '32FT SXL', 
+                                '32FT MXL'
+                              ].map(v => (
+                                <option key={v} value={v}>{v}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Billing Type</label>
+                            <select name="billingType" value={templateAForm.billingType} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              {['Fixed', 'Per KM', 'Per Trip', 'Monthly', 'Adhoc'].map(b => (
+                                <option key={b} value={b}>{b}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Fixed KMS</label>
+                            <input type="number" min="0" name="fixedKms" value={templateAForm.fixedKms} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">12h Rate (₹)</label>
+                            <input type="number" min="0" name="rate12h" value={templateAForm.rate12h} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">24h Rate (₹)</label>
+                            <input type="number" min="0" name="rate24h" value={templateAForm.rate24h} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra KM (₹)</label>
+                            <input type="number" min="0" name="extraKmRate" value={templateAForm.extraKmRate} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra Hour (₹)</label>
+                            <input type="number" min="0" name="extraHourRate" value={templateAForm.extraHourRate} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Detention (₹)</label>
+                            <input type="number" min="0" name="detentionCharges" value={templateAForm.detentionCharges} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <button type="button" onClick={addOrUpdateRowTemplateA} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+                            {editingRowIndex !== null ? 'Update Row' : 'Add Row'}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-6 mb-2">
                         <h4 className="text-md font-semibold text-slate-700">Route-Based Pricing Table (Point-to-Point)</h4>
-                        <button 
-                          type="button" 
-                          onClick={addRowTemplateA} 
-                          className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold py-2 px-3 rounded-lg border border-indigo-200 transition-colors"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Add Route Row
-                        </button>
                       </div>
                       
                       <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
                         <table className="min-w-full divide-y divide-slate-200 text-sm">
                           <thead className="bg-slate-50">
                             <tr>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[140px]">From (Origin)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[140px]">To (Destination)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[130px]">Vehicle Type</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[130px]">Billing Type</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[90px]">Fixed KMS</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">12h Rate (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">24h Rate (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">Extra KM (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">Extra Hour (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[100px]">Detention (₹)</th>
-                              <th className="px-3 py-3 text-center font-semibold text-slate-600 w-16">Action</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[120px]">From (Origin)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[120px]">To (Destination)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Vehicle Type</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Billing Type</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Fixed KMS</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">12h Rate (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">24h Rate (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Extra KM (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Extra Hour (₹)</th>
+                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Detention (₹)</th>
+                              <th className="px-3 py-3 text-center font-semibold text-slate-600 w-24">Action</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-slate-100">
                             {rows.map((row, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/50">
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="text" 
-                                    value={row.from || ''} 
-                                    onChange={e => updateRowField(idx, 'from', e.target.value)} 
-                                    placeholder="Origin" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="text" 
-                                    value={row.to || ''} 
-                                    onChange={e => updateRowField(idx, 'to', e.target.value)} 
-                                    placeholder="Destination" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <select 
-                                    value={row.vehicleType || 'Tata Ace'} 
-                                    onChange={e => updateRowField(idx, 'vehicleType', e.target.value)} 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500"
-                                  >
-                                    {['Tata Ace', 'Tata 407', '14FT', '17FT', '20FT', '32FT'].map(v => (
-                                      <option key={v} value={v}>{v}</option>
-                                    ))}
-                                  </select>
-                                </td>
-                                <td className="px-2 py-2">
-                                  <select 
-                                    value={row.billingType || 'Fixed'} 
-                                    onChange={e => updateRowField(idx, 'billingType', e.target.value)} 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500"
-                                  >
-                                    {['Fixed', 'Per KM', 'Per Trip', 'Monthly', 'Adhoc'].map(b => (
-                                      <option key={b} value={b}>{b}</option>
-                                    ))}
-                                  </select>
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={row.fixedKms || ''} 
-                                    onChange={e => updateRowField(idx, 'fixedKms', e.target.value)} 
-                                    placeholder="0" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={row.rate12h || ''} 
-                                    onChange={e => updateRowField(idx, 'rate12h', e.target.value)} 
-                                    placeholder="0" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={row.rate24h || ''} 
-                                    onChange={e => updateRowField(idx, 'rate24h', e.target.value)} 
-                                    placeholder="0" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={row.extraKmRate || ''} 
-                                    onChange={e => updateRowField(idx, 'extraKmRate', e.target.value)} 
-                                    placeholder="0" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={row.extraHourRate || ''} 
-                                    onChange={e => updateRowField(idx, 'extraHourRate', e.target.value)} 
-                                    placeholder="0" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={row.detentionCharges || ''} 
-                                    onChange={e => updateRowField(idx, 'detentionCharges', e.target.value)} 
-                                    placeholder="0" 
-                                    className="w-full border-slate-200 rounded px-2 py-1 bg-white border focus:ring-1 focus:ring-indigo-500" 
-                                  />
-                                </td>
-                                <td className="px-2 py-2 text-center">
-                                  <button 
-                                    type="button" 
-                                    onClick={() => removeRow(idx)} 
-                                    className="text-rose-600 hover:text-rose-800 p-1"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                  </button>
+                              <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
+                                <td className="px-3 py-3 text-slate-700">{row.from}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.to}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.vehicleType}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.billingType}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.fixedKms || '-'}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.rate12h || '-'}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.rate24h || '-'}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.extraKmRate || '-'}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.extraHourRate || '-'}</td>
+                                <td className="px-3 py-3 text-slate-700">{row.detentionCharges || '-'}</td>
+                                <td className="px-3 py-3 text-center">
+                                  <div className="flex justify-center gap-2">
+                                    <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                      </svg>
+                                    </button>
+                                    <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                             {rows.length === 0 && (
                               <tr>
-                                <td colSpan="11" className="px-4 py-8 text-center text-slate-400 font-medium bg-slate-50/50">
-                                  No route configuration rows added. Click "Add Route Row" to start.
+                                <td colSpan="11" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
+                                  No route configuration rows added.
                                 </td>
                               </tr>
                             )}
@@ -1444,107 +1511,164 @@ const AdminDashboard = () => {
                   {/* Render Template B */}
                   {templateType === 'TEMPLATE_B' && (
                     <div className="space-y-4 pt-4 border-t border-slate-100">
-                      <div className="flex justify-between items-center">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Store Hub Row' : 'Add Store Hub Row'}</h4>
+                          {editingRowIndex !== null && (
+                            <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Store Code*</label>
+                            <input type="text" name="storeCode" value={templateBForm.storeCode} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Store Name*</label>
+                            <input type="text" name="storeName" value={templateBForm.storeName} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Location</label>
+                            <input type="text" name="location" value={templateBForm.location} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">City</label>
+                            <input type="text" name="city" value={templateBForm.city} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">State</label>
+                            <input type="text" name="state" value={templateBForm.state} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Zone</label>
+                            <input type="text" name="zone" value={templateBForm.zone} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Ace Rate (₹)</label>
+                            <input type="number" min="0" name="tataAceRate" value={templateBForm.tataAceRate} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">407 Rate (₹)</label>
+                            <input type="number" min="0" name="tata407Rate" value={templateBForm.tata407Rate} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">14FT Rate (₹)</label>
+                            <input type="number" min="0" name="rate14ft" value={templateBForm.rate14ft} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">17FT Rate (₹)</label>
+                            <input type="number" min="0" name="rate17ft" value={templateBForm.rate17ft} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">20FT Rate (₹)</label>
+                            <input type="number" min="0" name="rate20ft" value={templateBForm.rate20ft} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 7 TON (₹)</label>
+                            <input type="number" min="0" name="rate32ft7ton" value={templateBForm.rate32ft7ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 9 TON (₹)</label>
+                            <input type="number" min="0" name="rate32ft9ton" value={templateBForm.rate32ft9ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 10 TON (₹)</label>
+                            <input type="number" min="0" name="rate32ft10ton" value={templateBForm.rate32ft10ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 15 TON (₹)</label>
+                            <input type="number" min="0" name="rate32ft15ton" value={templateBForm.rate32ft15ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Detention/d (₹)</label>
+                            <input type="number" min="0" name="detentionCostPerDay" value={templateBForm.detentionCostPerDay} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Local Pt (₹)</label>
+                            <input type="number" min="0" name="localPointCharges" value={templateBForm.localPointCharges} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Out-of-St (₹)</label>
+                            <input type="number" min="0" name="outOfStatePointCharges" value={templateBForm.outOfStatePointCharges} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <button type="button" onClick={addOrUpdateRowTemplateB} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+                            {editingRowIndex !== null ? 'Update Row' : 'Add Row'}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-6 mb-2">
                         <h4 className="text-md font-semibold text-slate-700">Store Hub / Zone Matrix Pricing Table</h4>
-                        <button 
-                          type="button" 
-                          onClick={addRowTemplateB} 
-                          className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold py-2 px-3 rounded-lg border border-indigo-200 transition-colors"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Add Store Hub Row
-                        </button>
                       </div>
                       
                       <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
                         <table className="min-w-full divide-y divide-slate-200 text-xs">
                           <thead className="bg-slate-50">
                             <tr>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">Store Code</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[120px]">Store Name</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[120px]">Location</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[80px]">Pincode</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">City</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">State</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[70px]">Zone</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">Ace Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">407 Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">14FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">17FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">20FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[75px]">32FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[85px]">Detention/d</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[85px]">Local Pt (₹)</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600 min-w-[90px]">Out-of-St (₹)</th>
-                              <th className="px-2 py-3 text-center font-semibold text-slate-600 w-12">Action</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Store Code</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Store Name</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Location</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">City</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">State</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Zone</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Ace Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">407 Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">14FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">17FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">20FT Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 7 TON</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 9 TON</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 10 TON</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 15 TON</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Detention/d</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Local Pt</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Out-of-St</th>
+                              <th className="px-2 py-3 text-center font-semibold text-slate-600 w-20">Action</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-slate-100">
                             {rows.map((row, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/50">
-                                <td className="px-1 py-2">
-                                  <input type="text" value={row.storeCode || ''} onChange={e => updateRowField(idx, 'storeCode', e.target.value)} placeholder="Code" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="text" value={row.storeName || ''} onChange={e => updateRowField(idx, 'storeName', e.target.value)} placeholder="Name" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="text" value={row.location || ''} onChange={e => updateRowField(idx, 'location', e.target.value)} placeholder="Address" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.pincode || ''} onChange={e => updateRowField(idx, 'pincode', e.target.value)} placeholder="Pin" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="text" value={row.city || ''} onChange={e => updateRowField(idx, 'city', e.target.value)} placeholder="City" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="text" value={row.state || ''} onChange={e => updateRowField(idx, 'state', e.target.value)} placeholder="State" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="text" value={row.zone || ''} onChange={e => updateRowField(idx, 'zone', e.target.value)} placeholder="Zone" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.tataAceRate || ''} onChange={e => updateRowField(idx, 'tataAceRate', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.tata407Rate || ''} onChange={e => updateRowField(idx, 'tata407Rate', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.rate14ft || ''} onChange={e => updateRowField(idx, 'rate14ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.rate17ft || ''} onChange={e => updateRowField(idx, 'rate17ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.rate20ft || ''} onChange={e => updateRowField(idx, 'rate20ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.rate32ft || ''} onChange={e => updateRowField(idx, 'rate32ft', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.detentionCostPerDay || ''} onChange={e => updateRowField(idx, 'detentionCostPerDay', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.localPointCharges || ''} onChange={e => updateRowField(idx, 'localPointCharges', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2">
-                                  <input type="number" min="0" value={row.outOfStatePointCharges || ''} onChange={e => updateRowField(idx, 'outOfStatePointCharges', e.target.value)} placeholder="0" className="w-full border-slate-200 rounded px-1 py-1 bg-white border" />
-                                </td>
-                                <td className="px-1 py-2 text-center">
-                                  <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                  </button>
+                              <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
+                                <td className="px-2 py-3 text-slate-700">{row.storeCode}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.storeName}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.location || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.city || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.state || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.zone || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.tataAceRate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.tata407Rate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate14ft || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate17ft || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate20ft || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate32ft7ton || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate32ft9ton || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate32ft10ton || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rate32ft15ton || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.detentionCostPerDay || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.localPointCharges || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.outOfStatePointCharges || '-'}</td>
+                                <td className="px-2 py-3 text-center">
+                                  <div className="flex justify-center gap-2">
+                                    <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                      </svg>
+                                    </button>
+                                    <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                             {rows.length === 0 && (
                               <tr>
-                                <td colSpan="17" className="px-4 py-8 text-center text-slate-400 font-medium bg-slate-50/50">
-                                  No location grid rows added. Click "Add Store Hub Row" to start.
+                                <td colSpan="20" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
+                                  No location grid rows added.
                                 </td>
                               </tr>
                             )}
@@ -1554,62 +1678,196 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
-                  {/* Render Template C */}
-                  {templateType === 'TEMPLATE_C' && (
+                  {/* Render Template D */}
+                  {templateType === 'TEMPLATE_D' && (
                     <div className="space-y-4 pt-4 border-t border-slate-100">
-                      <h4 className="text-md font-semibold text-slate-700">Flat Rate Pricing (Weight/Volume)</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Base Price Per KG (₹)</label>
-                          <input type="number" required value={rateForm.basePricePerKg} onChange={e => setRateForm({...rateForm, basePricePerKg: e.target.value})} className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border" />
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Deployment Row' : 'Add Deployment Row'}</h4>
+                          {editingRowIndex !== null && (
+                            <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
+                          )}
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Volumetric Divisor</label>
-                          <input type="number" required value={rateForm.volumetricDivisor} onChange={e => setRateForm({...rateForm, volumetricDivisor: e.target.value})} className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">BU Vertical</label>
+                            <input type="text" name="buVertical" value={templateDForm.buVertical} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Rate Type</label>
+                            <select name="rateType" value={templateDForm.rateType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              <option value="Regular">Regular</option>
+                              <option value="Adhoc">Adhoc</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Vehicle Type</label>
+                            <select name="vehicleType" value={templateDForm.vehicleType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              {[
+                                'Van (or Eeco)', 
+                                'Mini Truck (Ace)', 
+                                'Pickup Truck', 
+                                'Truck (407)', 
+                                'Truck 14ft', 
+                                'Large Truck 17ft', 
+                                'Large Truck 19ft/20ft', 
+                                'Large Truck 22ft/24ft', 
+                                '32FT SXL', 
+                                '32FT MXL'
+                              ].map(v => (
+                                <option key={v} value={v}>{v}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Origin*</label>
+                            <input type="text" name="origin" value={templateDForm.origin} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Fuel Rate</label>
+                            <input type="number" min="0" step="0.01" name="fuelRate" value={templateDForm.fuelRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Agreed Days</label>
+                            <input type="number" min="0" name="agreedDays" value={templateDForm.agreedDays} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Deployment Hr</label>
+                            <input type="number" min="0" name="deploymentHour" value={templateDForm.deploymentHour} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Fix km</label>
+                            <input type="number" min="0" name="fixKm" value={templateDForm.fixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Rate at Fix km</label>
+                            <input type="number" min="0" name="rateAtFixKm" value={templateDForm.rateAtFixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra km rate</label>
+                            <input type="number" min="0" step="0.01" name="extraKmRate" value={templateDForm.extraKmRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra hour rate</label>
+                            <input type="number" min="0" name="extraHourRate" value={templateDForm.extraHourRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Start Effect. Date</label>
+                            <input type="date" name="startEffectiveDate" value={templateDForm.startEffectiveDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">Expiry Date</label>
+                            <input type="date" name="expiryDate" value={templateDForm.expiryDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Fuel Surcharge Rate (%)</label>
-                          <input type="number" required value={rateForm.fuelSurchargeRate} onChange={e => setRateForm({...rateForm, fuelSurchargeRate: e.target.value})} className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border" />
+                        <div className="mt-4 flex justify-end">
+                          <button type="button" onClick={addOrUpdateRowTemplateD} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+                            {editingRowIndex !== null ? 'Update Row' : 'Add Row'}
+                          </button>
                         </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-6 mb-2">
+                        <h4 className="text-md font-semibold text-slate-700">Dedicated Deployment Pricing Table</h4>
+                      </div>
+                      
+                      <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
+                        <table className="min-w-full divide-y divide-slate-200 text-xs">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">BU Vertical</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Rate Type</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Vehicle Type</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Origin</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Fuel Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Agreed Days</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Dep. Hr</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Fix km</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Rate (Fix km)</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Ex km Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Ex hr Rate</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Effective</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Expiry</th>
+                              <th className="px-2 py-3 text-center font-semibold text-slate-600 w-20">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-100">
+                            {rows.map((row, idx) => (
+                              <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
+                                <td className="px-2 py-3 text-slate-700">{row.buVertical || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rateType || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.vehicleType || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.origin || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.fuelRate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.agreedDays || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.deploymentHour || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.fixKm || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.rateAtFixKm || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.extraKmRate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.extraHourRate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.startEffectiveDate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.expiryDate || '-'}</td>
+                                <td className="px-2 py-3 text-center">
+                                  <div className="flex justify-center gap-2">
+                                    <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                      </svg>
+                                    </button>
+                                    <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                            {rows.length === 0 && (
+                              <tr>
+                                <td colSpan="14" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
+                                  No dedicated deployment rows added.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   )}
 
-                  <div className="pt-4 border-t border-slate-100 flex justify-end">
-                    <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Update Rates</button>
                   </div>
-                </form>
               </div>
               
               {/* Users List Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-8">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 mt-8">
                 <h3 className="text-lg font-bold text-slate-800 mb-4">Current Users</h3>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead>
                       <tr>
-                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                       {usersList.map((usr) => (
                         <tr key={usr._id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{usr.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{usr.name}</td>
+                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${usr.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : usr.role === 'ACCOUNTANT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
                               {usr.role}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.email || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.mobileNumber || '-'}</td>
+                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.email || '-'}</td>
+                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.mobileNumber || '-'}</td>
                         </tr>
                       ))}
                       {usersList.length === 0 && (
                         <tr>
-                          <td colSpan="4" className="px-6 py-4 text-center text-sm text-slate-500">No users found</td>
+                          <td colSpan="4" className="px-3 sm:px-4 md:px-6 py-4 text-center text-sm text-slate-500">No users found</td>
                         </tr>
                       )}
                     </tbody>
@@ -1625,7 +1883,7 @@ const AdminDashboard = () => {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Add Fleet Asset Form */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Register Fleet Asset</h3>
                   <form onSubmit={handleRegisterFleet} className="space-y-4">
                     <div>
@@ -1690,7 +1948,7 @@ const AdminDashboard = () => {
                 </div>
                 
                 {/* Fleet List */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-slate-800">Fleet Asset Roster</h3>
                     <button onClick={fetchFleetAssets} className="text-slate-500 hover:text-indigo-600 transition bg-slate-100 hover:bg-indigo-50 p-2 rounded-md" title="Refresh Fleet">
@@ -1727,7 +1985,7 @@ const AdminDashboard = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="4" className="py-8 text-center text-slate-400">No fleet assets found.</td>
+                            <td colSpan="4" className="py-4 sm:py-6 md:py-8 text-center text-slate-400">No fleet assets found.</td>
                           </tr>
                         )}
                       </tbody>
@@ -1745,7 +2003,7 @@ const AdminDashboard = () => {
               
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Add Driver Form */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4">Onboard New Driver</h3>
                   <form onSubmit={handleCreateDriver} className="space-y-4">
                     <div>
@@ -1823,7 +2081,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Driver List */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-slate-800">Driver Roster</h3>
                     <button onClick={fetchDrivers} className="text-slate-500 hover:text-indigo-600 transition bg-slate-100 hover:bg-indigo-50 p-2 rounded-md" title="Refresh Drivers">
@@ -1889,7 +2147,7 @@ const AdminDashboard = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="7" className="py-8 text-center text-slate-400">No drivers found. Add one to get started.</td>
+                            <td colSpan="7" className="py-4 sm:py-6 md:py-8 text-center text-slate-400">No drivers found. Add one to get started.</td>
                           </tr>
                         )}
                       </tbody>
@@ -1985,7 +2243,7 @@ const AdminDashboard = () => {
 
           {activeTab === 'SUBSCRIPTION' && subscriptionDetails && (
             <div className="space-y-8 max-w-5xl mx-auto">
-              <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+              <div className="flex justify-between items-center bg-white p-3 sm:p-4 md:p-6 rounded-xl shadow-sm border border-slate-100">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-800">Your Subscription Plan</h2>
                   <p className="text-slate-500 mt-1">Manage your billing and access levels.</p>
@@ -2003,7 +2261,7 @@ const AdminDashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Plan Details</h3>
                   <div className="space-y-4">
                     <div className="flex justify-between">
@@ -2026,7 +2284,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Included Features</h3>
                   <ul className="space-y-3">
                     {subscriptionDetails.planType === 'TRIAL' && (
@@ -2066,7 +2324,7 @@ const AdminDashboard = () => {
               </div>
 
               {subscriptionDetails.planType === 'LIFETIME' && (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 mt-6">
                   <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Add Sister Company (Lifetime Feature)</h3>
                   <form onSubmit={handleCreateSisterCompany} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2104,7 +2362,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="pt-2">
-                      <button type="submit" disabled={sisterCompanyLoading} className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
+                      <button type="submit" disabled={sisterCompanyLoading} className="bg-indigo-600 text-white py-2 px-3 sm:px-4 md:px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
                         {sisterCompanyLoading ? 'Creating Workspace...' : 'Create Workspace'}
                       </button>
                     </div>
@@ -2115,31 +2373,31 @@ const AdminDashboard = () => {
 
               {/* WORKSPACE DIRECTORY */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-100 mt-6 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div className="p-3 sm:p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                   <h3 className="text-lg font-bold text-slate-800">Workspace Directory</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-slate-600">
                     <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100 uppercase font-medium">
                       <tr>
-                        <th className="px-6 py-4">Workspace Name</th>
-                        <th className="px-6 py-4">Type</th>
-                        <th className="px-6 py-4">GSTIN</th>
-                        <th className="px-6 py-4">Contact</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-4">Workspace Name</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-4">Type</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-4">GSTIN</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-4">Contact</th>
+                        <th className="px-3 sm:px-4 md:px-6 py-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {/* Primary Workspace */}
                       <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-900 flex items-center">
+                        <td className="px-3 sm:px-4 md:px-6 py-4 font-medium text-slate-900 flex items-center">
                           <span className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
                           {subscriptionDetails.companyName}
                         </td>
-                        <td className="px-6 py-4"><span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">Primary</span></td>
-                        <td className="px-6 py-4 text-slate-500">{subscriptionDetails.gstin || '-'}</td>
-                        <td className="px-6 py-4 text-slate-500">{subscriptionDetails.contactNumber || subscriptionDetails.registeredMobile || '-'}</td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-3 sm:px-4 md:px-6 py-4"><span className="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded">Primary</span></td>
+                        <td className="px-3 sm:px-4 md:px-6 py-4 text-slate-500">{subscriptionDetails.gstin || '-'}</td>
+                        <td className="px-3 sm:px-4 md:px-6 py-4 text-slate-500">{subscriptionDetails.contactNumber || subscriptionDetails.registeredMobile || '-'}</td>
+                        <td className="px-3 sm:px-4 md:px-6 py-4 text-right">
                           <button onClick={() => {
                             setEditingWorkspace({...subscriptionDetails, isPrimary: true});
                             setEditWorkspaceForm({
@@ -2160,14 +2418,14 @@ const AdminDashboard = () => {
                       {/* Sister Companies */}
                       {workspaces.slice(1).map(ws => (
                         <tr key={ws._id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4 font-medium text-slate-700 flex items-center">
+                          <td className="px-3 sm:px-4 md:px-6 py-4 font-medium text-slate-700 flex items-center">
                             <span className="w-2 h-2 rounded-full bg-slate-300 mr-2"></span>
                             {ws.companyName}
                           </td>
-                          <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded">Sister</span></td>
-                          <td className="px-6 py-4 text-slate-500">{ws.gstin || '-'}</td>
-                          <td className="px-6 py-4 text-slate-500">{ws.contactNumber || '-'}</td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-3 sm:px-4 md:px-6 py-4"><span className="bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded">Sister</span></td>
+                          <td className="px-3 sm:px-4 md:px-6 py-4 text-slate-500">{ws.gstin || '-'}</td>
+                          <td className="px-3 sm:px-4 md:px-6 py-4 text-slate-500">{ws.contactNumber || '-'}</td>
+                          <td className="px-3 sm:px-4 md:px-6 py-4 text-right">
                             <button onClick={() => {
                               setEditingWorkspace({...ws, isPrimary: false});
                               setEditWorkspaceForm({
@@ -2193,14 +2451,14 @@ const AdminDashboard = () => {
               {editingWorkspace && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
                   <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <div className="p-3 sm:p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                       <div>
                         <h3 className="text-lg font-bold text-slate-800">Edit Workspace</h3>
                         <p className="text-sm text-slate-500">Updating details for {editingWorkspace.companyName}</p>
                       </div>
                       <button onClick={() => setEditingWorkspace(null)} className="text-slate-400 hover:text-slate-600 text-2xl font-light">&times;</button>
                     </div>
-                    <div className="p-6 overflow-y-auto">
+                    <div className="p-3 sm:p-4 md:p-6 overflow-y-auto">
                       <form id="editWorkspaceForm" onSubmit={handleUpdateWorkspace} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="md:col-span-2">
@@ -2273,7 +2531,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
                       <button type="button" onClick={() => setEditingWorkspace(null)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
-                      <button type="submit" form="editWorkspaceForm" disabled={editWorkspaceLoading} className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
+                      <button type="submit" form="editWorkspaceForm" disabled={editWorkspaceLoading} className="bg-indigo-600 text-white py-2 px-3 sm:px-4 md:px-6 rounded-md hover:bg-indigo-700 transition font-medium disabled:opacity-50">
                         {editWorkspaceLoading ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
@@ -2282,7 +2540,7 @@ const AdminDashboard = () => {
               )}
 
               {subscriptionDetails.planType !== 'LIFETIME' ? (
-                <div className="bg-slate-900 rounded-xl shadow-lg p-8 text-center mt-8 text-white relative overflow-hidden">
+                <div className="bg-slate-900 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 text-center mt-8 text-white relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 opacity-20 rounded-full blur-3xl -mr-20 -mt-20"></div>
                   <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 opacity-20 rounded-full blur-3xl -ml-20 -mb-20"></div>
                   
@@ -2294,26 +2552,26 @@ const AdminDashboard = () => {
                     
                     {/* Upgrade to Silver (Rank 2) - Only show if current is Rank 1 (TRIAL) */}
                     {subscriptionDetails.planType === 'TRIAL' && (
-                      <button onClick={() => handleUpgradePlan('SILVER')} className="px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-lg transition-colors shadow-md">
+                      <button onClick={() => handleUpgradePlan('SILVER')} className="px-3 sm:px-4 md:px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-lg transition-colors shadow-md">
                         Upgrade to Silver Plan
                       </button>
                     )}
 
                     {/* Upgrade to Platinum (Rank 3) - Only show if current is Rank 1 or 2 */}
                     {(subscriptionDetails.planType === 'TRIAL' || subscriptionDetails.planType === 'SILVER') && (
-                      <button onClick={() => handleUpgradePlan('PLATINUM')} className="px-8 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-indigo-500/30">
+                      <button onClick={() => handleUpgradePlan('PLATINUM')} className="px-4 sm:px-6 md:px-8 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-indigo-500/30">
                         Go PLATINUM (Unlimited)
                       </button>
                     )}
 
                     {/* Upgrade to Lifetime (Rank 4) - Always show unless already on Lifetime */}
-                    <button onClick={() => handleUpgradePlan('LIFETIME')} className="px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-amber-500/30">
+                    <button onClick={() => handleUpgradePlan('LIFETIME')} className="px-4 sm:px-6 md:px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-lg transition-colors shadow-lg shadow-amber-500/30">
                       Unlock LIFETIME
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-8 text-center mt-8 relative overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 sm:p-6 md:p-8 text-center mt-8 relative overflow-hidden">
                   <h3 className="text-2xl font-bold mb-2 text-amber-600">Lifetime Member</h3>
                   <p className="text-amber-700/80 max-w-2xl mx-auto">You have unlocked the absolute highest tier. Thank you for your infinite commitment to PROHIT CoreTech!</p>
                 </div>
@@ -2327,9 +2585,9 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
                 <div className="flex">
                   {/* Left Side: Order Summary */}
-                  <div className="w-1/2 p-8 bg-slate-50 border-r border-slate-200">
+                  <div className="w-1/2 p-4 sm:p-6 md:p-8 bg-slate-50 border-r border-slate-200">
                     <h3 className="text-2xl font-bold text-slate-900 mb-6">Upgrade Order</h3>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
+                    <div className="bg-white p-3 sm:p-4 md:p-6 rounded-xl shadow-sm border border-slate-100 mb-6">
                       <h4 className="font-bold text-slate-800 text-lg">{pendingUpgradePlan} Plan</h4>
                       <p className="text-slate-500 text-sm mb-4">PROHIT CoreTech Enterprise Access</p>
                       <div className="flex justify-between items-center mb-2">
@@ -2353,7 +2611,7 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Right Side: Payment Form */}
-                  <div className="w-1/2 p-8 relative">
+                  <div className="w-1/2 p-4 sm:p-6 md:p-8 relative">
                     <button onClick={() => setPendingUpgradePlan(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-700">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -2381,7 +2639,7 @@ const AdminDashboard = () => {
                             <label className="block text-sm font-medium text-slate-700 mb-1">Card Number</label>
                             <input type="text" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="**** **** **** 4242" />
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1">Expiry</label>
                               <input type="text" autoComplete="off" maxLength="5" required className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none" placeholder="MM/YY" />

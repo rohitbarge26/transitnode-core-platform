@@ -53,7 +53,7 @@ const AccountantDashboard = () => {
 
   return (
     <div className="mt-8">
-      <div className="glass-panel p-6">
+      <div className="glass-panel p-3 sm:p-4 md:p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-2xl font-bold text-[#4ade80]">Financial Ledger</h3>
@@ -79,9 +79,9 @@ const AccountantDashboard = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-gray-500 animate-pulse">Loading ledgers...</div>
+            <div className="text-center py-4 sm:py-6 md:py-8 text-gray-500 animate-pulse">Loading ledgers...</div>
           ) : invoices.length === 0 ? (
-            <div className="text-center py-12 bg-gray-800/20 rounded-xl border border-gray-700/30">
+            <div className="text-center py-6 sm:py-8 md:py-12 bg-gray-800/20 rounded-xl border border-gray-700/30">
               <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -119,7 +119,7 @@ const AccountantDashboard = () => {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
           <div className="bg-[#0B0E14] text-white rounded-2xl shadow-2xl w-full max-w-md border border-[#4ade80]/30 overflow-hidden animate-slide-up">
             
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 border-b border-gray-700/50">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-3 sm:p-4 md:p-6 border-b border-gray-700/50">
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-bold text-white mb-1">Process Payment</h2>
@@ -133,7 +133,7 @@ const AccountantDashboard = () => {
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-3 sm:p-4 md:p-6 space-y-6">
               {/* Financial Breakdown */}
               <div className="space-y-3 bg-gray-800/30 p-4 rounded-xl border border-gray-700/50">
                 <div className="flex justify-between text-sm">

@@ -58,7 +58,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
       <div className="w-full bg-white text-black p-4 font-sans text-[11px] leading-tight border border-gray-400 print:border-none print:p-0">
         
         {/* Main Grid Container */}
-        <div className="border-[1.5px] border-black grid grid-cols-12">
+        <div className="border-[1.5px] border-black grid grid-cols-1 md:grid-cols-12">
           
           {/* HEADER SECTION */}
           {/* Brand Logo & Name */}
@@ -86,7 +86,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
           {/* Booking Info */}
           <div className="col-span-2 border-b border-r border-black grid grid-rows-2">
             <div className="p-1 border-b border-black font-bold text-[9px] uppercase bg-gray-50">Booking Date & Time</div>
-            <div className="p-1 grid grid-cols-2 text-[10px]">
+            <div className="p-1 grid grid-cols-1 sm:grid-cols-2 text-[10px]">
               <div>DATE: <span className="font-bold font-mono">{bookingDate}</span></div>
               <div className="border-l border-black pl-1">TIME: <span className="font-bold font-mono">{bookingTime}</span></div>
             </div>
@@ -117,7 +117,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
 
           {/* SHIPPER & RECIPIENT DETAILS */}
           {/* Shipper Details (Consignor) */}
-          <div className="col-span-6 border-b border-r border-black grid grid-cols-12">
+          <div className="col-span-6 border-b border-r border-black grid grid-cols-1 md:grid-cols-12">
             <div className="col-span-12 bg-gray-100 p-1 font-bold border-b border-black uppercase text-[9px]">
               SHIPPER'S DETAILS (Consignor)
             </div>
@@ -169,7 +169,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
           </div>
 
           {/* Recipient Details (Consignee) */}
-          <div className="col-span-6 border-b border-black grid grid-cols-12">
+          <div className="col-span-6 border-b border-black grid grid-cols-1 md:grid-cols-12">
             <div className="col-span-12 bg-gray-100 p-1 font-bold border-b border-black uppercase text-[9px]">
               RECIPIENT'S DETAILS (Consignee)
             </div>
@@ -222,7 +222,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
 
           {/* CARGO & PHYSICAL SPECIFICATIONS */}
           {/* Weight details */}
-          <div className="col-span-4 border-b border-r border-black grid grid-cols-2">
+          <div className="col-span-4 border-b border-r border-black grid grid-cols-1 sm:grid-cols-2">
             <div className="p-1 border-r border-black">
               <span className="text-[8px] block text-gray-500 uppercase">Actual Wt. (kg)</span>
               <span className="font-bold text-xs font-mono">{logistics?.package?.actualWeight || logistics?.package?.weight_kg || 'N/A'}</span>
@@ -260,7 +260,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
 
           {/* MAIN LOWER BODY: PACKAGE INFO & CHARGES DETAILS */}
           {/* Package Info Table */}
-          <div className="col-span-8 border-r border-black grid grid-cols-12">
+          <div className="col-span-8 border-r border-black grid grid-cols-1 md:grid-cols-12">
             <div className="col-span-12 bg-gray-100 p-1 font-bold border-b border-black uppercase text-[9px]">
               Package Information
             </div>
@@ -297,7 +297,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
             </div>
 
             {/* Terms and Signatures grid */}
-            <div className="col-span-12 grid grid-cols-12">
+            <div className="col-span-12 grid grid-cols-1 md:grid-cols-12">
               
               {/* Retail Terms & Conditions */}
               <div className="col-span-4 p-2 border-r border-b border-black text-[7px] leading-tight">
@@ -451,7 +451,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
       <div className="bg-white text-black rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden relative print:static print:overflow-visible print:max-w-none print:shadow-none print:w-full">
         
         {/* Header - Not printed */}
-        <div className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center print:hidden">
+        <div className="bg-gray-900 text-white px-3 sm:px-4 md:px-6 py-4 flex justify-between items-center print:hidden">
           <div>
             <h3 className="text-base font-bold">Lorry Receipt (LR) Consignment Note</h3>
             <p className="text-xs text-gray-400 mt-0.5">Online generated manifest for tracking ID: {trackingNumber}</p>
@@ -465,7 +465,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
         </div>
 
         {/* Preview Scroll Area */}
-        <div className="max-h-[80vh] overflow-y-auto bg-gray-50 p-6 print:p-0 print:bg-white print:max-h-none print:overflow-visible">
+        <div className="max-h-[80vh] overflow-y-auto bg-gray-50 p-3 sm:p-4 md:p-6 print:p-0 print:bg-white print:max-h-none print:overflow-visible">
           <SarthakLRTemplate />
         </div>
 
@@ -478,7 +478,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
         )}
 
         {/* Footer Actions - Not printed */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-4 print:hidden">
+        <div className="px-3 sm:px-4 md:px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-4 print:hidden">
           <button 
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition text-sm font-semibold"
@@ -493,7 +493,7 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
               window.print();
               document.title = originalTitle;
             }}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition text-sm flex items-center gap-2"
+            className="px-3 sm:px-4 md:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition text-sm flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

@@ -43,7 +43,7 @@ const AccountantPayroll = () => {
 
   return (
     <div className="mt-8">
-      <div className="glass-panel p-6">
+      <div className="glass-panel p-3 sm:p-4 md:p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h3 className="text-2xl font-bold text-[#4ade80]">Payroll & Salary Slips</h3>
@@ -63,7 +63,7 @@ const AccountantPayroll = () => {
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-gray-500 animate-pulse">Loading payroll records...</div>
+          <div className="text-center py-4 sm:py-6 md:py-8 text-gray-500 animate-pulse">Loading payroll records...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -108,7 +108,7 @@ const AccountantPayroll = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="py-8 text-center text-gray-500">
+                    <td colSpan="6" className="py-4 sm:py-6 md:py-8 text-center text-gray-500">
                       No payroll records found for this period.
                     </td>
                   </tr>

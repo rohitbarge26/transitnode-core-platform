@@ -135,7 +135,7 @@ const ComplianceVault = () => {
       <h2 className="text-xl font-bold text-slate-800">Compliance Document Vault</h2>
 
       {/* Upload Portal */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
         <h3 className="text-lg font-bold text-slate-800 mb-4">Upload New Document</h3>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
@@ -194,7 +194,7 @@ const ComplianceVault = () => {
 
           <div className="flex flex-col justify-center">
             <label className="block text-sm font-medium text-slate-700 mb-2">Attach Document (PDF, JPG, PNG)</label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md hover:border-indigo-500 transition-colors bg-slate-50 relative">
+            <div className="mt-1 flex justify-center px-3 sm:px-4 md:px-6 pt-5 pb-3 sm:pb-4 md:pb-6 border-2 border-slate-300 border-dashed rounded-md hover:border-indigo-500 transition-colors bg-slate-50 relative">
               <div className="space-y-1 text-center">
                 <svg className="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                   <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -215,7 +215,7 @@ const ComplianceVault = () => {
             <div className="mt-6 flex justify-end">
               <button 
                 type="submit" 
-                className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition font-bold shadow-md"
+                className="bg-indigo-600 text-white py-2 px-3 sm:px-4 md:px-6 rounded-md hover:bg-indigo-700 transition font-bold shadow-md"
                 disabled={loading}
               >
                 Secure & Upload Document
@@ -235,34 +235,34 @@ const ComplianceVault = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Target</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Document Type</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
+                <th scope="col" className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Target</th>
+                <th scope="col" className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Document Type</th>
+                <th scope="col" className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</th>
+                <th scope="col" className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-3 sm:px-4 md:px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {documents.length > 0 ? (
                 documents.map((doc) => (
                   <tr key={doc._id} className="hover:bg-indigo-50 cursor-pointer transition-colors" onClick={() => handleDocClick(doc)}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline">{doc.targetId}</div>
                       <div className="text-xs text-slate-500">{doc.targetType}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-900 font-medium flex items-center gap-2">
                         <span className="text-lg">{getDocIcon(doc.documentType)}</span>
                         {doc.documentType.replace(/_/g, ' ')}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-900">{new Date(doc.expiryDate).toLocaleDateString()}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(doc.expiryDate)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -277,7 +277,7 @@ const ComplianceVault = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-sm text-slate-500">
+                  <td colSpan="5" className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 text-center text-sm text-slate-500">
                     No compliance documents found in the vault.
                   </td>
                 </tr>
@@ -296,7 +296,7 @@ const ComplianceVault = () => {
             <div className="w-full h-full bg-white shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300">
               
               {/* Header */}
-              <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="px-3 sm:px-4 md:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   <span>{getDocIcon(selectedDoc.documentType)}</span>
                   Document Details
@@ -307,7 +307,7 @@ const ComplianceVault = () => {
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-6">
                 
                 {/* Document Viewer */}
                 <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-100 relative group">
@@ -321,7 +321,7 @@ const ComplianceVault = () => {
 
                 {/* Document Metadata */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Target Type</p>
                       <p className="font-medium text-slate-800">{selectedDoc.targetType}</p>
@@ -352,7 +352,7 @@ const ComplianceVault = () => {
                     </div>
                     <div className="p-4">
                       {loadingTrip ? (
-                        <div className="flex justify-center items-center py-8">
+                        <div className="flex justify-center items-center py-4 sm:py-6 md:py-8">
                           <svg className="animate-spin h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         </div>
                       ) : tripDetails ? (
@@ -375,7 +375,7 @@ const ComplianceVault = () => {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-indigo-100">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-indigo-100">
                             <div>
                               <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider mb-0.5">Driver</p>
                               <p className="text-sm font-medium text-slate-800">{tripDetails.logistics?.transport?.driverName || 'N/A'}</p>

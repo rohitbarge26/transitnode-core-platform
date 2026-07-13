@@ -39,7 +39,7 @@ const MagicLogin = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+      <div className="bg-white max-w-md w-full rounded-2xl shadow-xl border border-slate-200 p-4 sm:p-6 md:p-8 text-center">
         {error ? (
           <div>
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">

@@ -47,7 +47,7 @@ const SarthakMasterInvoiceForm = ({
       </div>
 
       {/* Top Details Table */}
-      <div className="grid grid-cols-2 border-b-2 border-black">
+      <div className="grid grid-cols-1 sm:grid-cols-2 border-b-2 border-black">
         <div className="border-r-2 border-black">
           <div className="flex border-b border-black">
             <div className="w-1/2 p-1 font-bold">Master Invoice No. :</div>
@@ -87,7 +87,7 @@ const SarthakMasterInvoiceForm = ({
       </div>
 
       {/* Address Details */}
-      <div className="grid grid-cols-2 border-b-2 border-black text-center text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 border-b-2 border-black text-center text-xs">
         <div className="p-2 border-r-2 border-black whitespace-pre-wrap">
           {companyAddress}
         </div>
@@ -97,7 +97,7 @@ const SarthakMasterInvoiceForm = ({
       </div>
 
       {/* GSTIN & PAN Details */}
-      <div className="grid grid-cols-2 border-b-2 border-black font-mono text-xs font-bold">
+      <div className="grid grid-cols-1 sm:grid-cols-2 border-b-2 border-black font-mono text-xs font-bold">
         <div className="border-r-2 border-black">
           <div className="flex border-b border-black">
             <div className="w-1/4 p-1">GSTIN :</div>

@@ -28,10 +28,10 @@ const TenantBrandingConfigurator = () => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-slate-900 min-h-screen text-slate-100 font-sans">
+    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto bg-slate-900 min-h-screen text-slate-100 font-sans">
       <h2 className="text-3xl font-bold mb-8">Workspace Branding Configuration</h2>
       
-      <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700 shadow-xl">
+      <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-700 shadow-xl">
         <form onSubmit={handleSave} className="space-y-8">
           
           <div>
@@ -77,7 +77,7 @@ const TenantBrandingConfigurator = () => {
             <button 
               type="submit" 
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 sm:px-6 md:px-8 rounded-lg transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50"
               style={{ backgroundColor: hexColor }}
             >
               {loading ? 'Saving...' : 'Save Configuration'}

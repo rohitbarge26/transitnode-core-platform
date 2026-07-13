@@ -211,7 +211,7 @@ const BookkeepingDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Form Container */}
-        <div className="lg:col-span-1 glass-panel p-6">
+        <div className="lg:col-span-1 glass-panel p-3 sm:p-4 md:p-6">
           <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="p-1 bg-purple-500/20 text-purple-400 rounded-lg text-xs">📝</span>
             {subTab === 'EXPENSES' ? 'Record Expense' : 'Record Purchase'}
@@ -423,7 +423,7 @@ const BookkeepingDashboard = () => {
         </div>
 
         {/* List Container */}
-        <div className="lg:col-span-2 glass-panel p-6 flex flex-col h-[65vh]">
+        <div className="lg:col-span-2 glass-panel p-3 sm:p-4 md:p-6 flex flex-col h-[65vh]">
           <h4 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
             <span>List of Records</span>
             <span className="text-xs bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full border border-purple-500/30">
@@ -433,10 +433,10 @@ const BookkeepingDashboard = () => {
 
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {loading ? (
-              <div className="text-center py-12 text-gray-500 animate-pulse">Loading ledgers...</div>
+              <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500 animate-pulse">Loading ledgers...</div>
             ) : subTab === 'EXPENSES' ? (
               expenses.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">No expenses recorded yet.</div>
+                <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500">No expenses recorded yet.</div>
               ) : (
                 <div className="space-y-3">
                   {expenses.map((exp) => (
@@ -470,7 +470,7 @@ const BookkeepingDashboard = () => {
                 </div>
               )
             ) : purchases.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">No purchase invoices recorded yet.</div>
+              <div className="text-center py-6 sm:py-8 md:py-12 text-gray-500">No purchase invoices recorded yet.</div>
             ) : (
               <div className="space-y-3">
                 {purchases.map((pur) => (

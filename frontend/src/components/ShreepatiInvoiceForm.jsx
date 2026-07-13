@@ -79,7 +79,7 @@ const ShreepatiInvoiceForm = ({
       <div className="flex min-h-[300px] border-b-2 border-black">
         
         {/* Date */}
-        <div className="w-[15%] p-2 border-r-2 border-black text-center pt-8 font-bold">
+        <div className="w-[15%] p-2 border-r-2 border-black text-center pt-4 sm:pt-6 md:pt-8 font-bold">
           {servicePeriod}
         </div>
         

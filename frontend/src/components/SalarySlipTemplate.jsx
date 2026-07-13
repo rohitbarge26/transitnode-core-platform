@@ -27,10 +27,10 @@ const SalarySlipTemplate = ({ data }) => {
           }
         `}
       </style>
-      <div className="bg-white text-black p-8 font-sans w-full max-w-5xl mx-auto border border-gray-200 print:border-none print:shadow-none">
+      <div className="bg-white text-black p-4 sm:p-6 md:p-8 font-sans w-full max-w-5xl mx-auto border border-gray-200 print:border-none print:shadow-none">
       
       {/* Header */}
-      <div className="flex justify-between items-center border-b-2 border-gray-800 pb-6 mb-8">
+      <div className="flex justify-between items-center border-b-2 border-gray-800 pb-3 sm:pb-4 md:pb-6 mb-8">
         <div>
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tighter">TransitNode Logistics</h1>
           <p className="text-gray-600 mt-1">123 Transport Hub, Mumbai, MH 400001</p>
@@ -57,7 +57,8 @@ const SalarySlipTemplate = ({ data }) => {
 
       {/* Salary Breakdown Table */}
       <div className="mb-10">
-        <table className="w-full border-collapse border border-gray-300">
+        <div className="overflow-x-auto max-w-full w-full">
+<table className="w-full border-collapse border border-gray-300">
           <thead>
             <tr className="bg-gray-100 text-gray-800">
               <th className="py-3 px-4 text-left border border-gray-300">Earnings</th>
@@ -87,6 +88,7 @@ const SalarySlipTemplate = ({ data }) => {
             </tr>
           </tbody>
         </table>
+</div>
       </div>
 
       {/* Net Pay Calculation */}
@@ -100,7 +102,7 @@ const SalarySlipTemplate = ({ data }) => {
       </div>
 
       {/* Footer / Signatures */}
-      <div className="mt-20 flex justify-between items-end px-8">
+      <div className="mt-20 flex justify-between items-end px-4 sm:px-6 md:px-8">
         <div className="text-center">
           <div className="w-48 border-b border-gray-400 mb-2"></div>
           <p className="text-gray-600 font-semibold">Employee Signature</p>
