@@ -12,6 +12,8 @@ const dailyRunSheetSchema = new mongoose.Schema(
     vehicleType: { type: String },
     parentVehicleNumber: { type: String },
     transport: { type: String }, // Vendor Name (Text field)
+    billingCycleUsed: { type: String },
+    invoiceTypeUsed: { type: String },
     vehicleOwnershipType: { type: String, default: 'Adhoc' },
     driverType: { type: String, default: 'Contract' },
     startOdometer: { type: Number, default: 0 },

@@ -41,6 +41,15 @@ router.post('/fleet/register', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), uplo
 router.delete('/fleet/:id', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), adminController.deleteFleetAsset);
 router.put('/drivers/:driverId/assign-vehicle', checkRole(['ADMIN', 'OPERATION_EXECUTIVE']), adminController.assignVehicleToDriver);
 
+// Daily Run Sheets (accessible by Operators for submission)
+router.get('/runsheets', checkRole(['ADMIN', 'OPERATION_EXECUTIVE', 'OPERATION', 'RECEPTIONIST']), adminController.getDailyRunSheets);
+router.post('/runsheets', checkRole(['ADMIN', 'OPERATION_EXECUTIVE', 'OPERATION']), adminController.createDailyRunSheet);
+router.put('/runsheets/:id', checkRole(['ADMIN']), adminController.updateDailyRunSheet);
+router.delete('/runsheets/:id', checkRole(['ADMIN']), adminController.deleteDailyRunSheet);
+
+// Rate Card Configuration (accessible by Operators/Receptionists for Intake)
+router.get('/rates', checkRole(['ADMIN', 'OPERATION_EXECUTIVE', 'OPERATION', 'RECEPTIONIST']), adminController.getRates);
+
 // Require ADMIN role for the rest
 router.use(checkRole(['ADMIN']));
 
@@ -59,8 +68,6 @@ router.post('/employee/verify', upload.fields([
 // Analytics
 router.get('/analytics/revenue', adminController.getAnalytics);
 
-// Rate Card Configuration
-router.get('/rates', adminController.getRates);
 router.put('/rates/update', adminController.updateRates);
 
 // Live Hardware Tracking
@@ -71,14 +78,12 @@ router.get('/compliance/documents', adminController.getComplianceDocuments);
 
 // Supplier Management
 router.post('/suppliers/create', supplierController.createSupplier);
+router.put('/suppliers/:id', supplierController.updateSupplier);
+router.delete('/suppliers/:id', supplierController.deleteSupplier);
 
 // Subscription Management
 router.get('/subscription', adminController.getSubscriptionDetails);
 router.put('/subscription/upgrade', adminController.updateSubscriptionPlan);
-
-// Daily Run Sheets
-router.get('/runsheets', adminController.getDailyRunSheets);
-router.post('/runsheets', adminController.createDailyRunSheet);
 
 // Demo Simulation Toggle
 router.post('/demo/toggle', (req, res) => {

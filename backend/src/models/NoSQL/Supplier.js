@@ -18,6 +18,26 @@ const supplierSchema = new mongoose.Schema(
     locationCode: {
       type: String,
     },
+    identifierType: {
+      type: String,
+      default: '',
+    },
+    mobileNumber: {
+      type: String,
+    },
+    emailId: {
+      type: String,
+    },
+    supportedBillingCycles: [
+      {
+        type: String,
+      },
+    ],
+    supportedInvoiceTypes: [
+      {
+        type: String,
+      },
+    ],
     state: {
       type: String,
     },

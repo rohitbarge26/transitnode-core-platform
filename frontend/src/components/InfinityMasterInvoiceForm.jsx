@@ -4,10 +4,12 @@ const InfinityMasterInvoiceForm = ({
   masterInvoiceId,
   supplierName = "Flipkart India Private Limited",
   baseRate,
-  companyName = "INFINITY GREEN LOGISTICS & SERVICES LLP"
+  companyName = "INFINITY GREEN LOGISTICS & SERVICES LLP",
+  invoiceDate: propInvoiceDate,
+  invoicePeriod: propInvoicePeriod
 }) => {
-  const invoiceDate = new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
-  const invoicePeriod = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const invoiceDate = propInvoiceDate || new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+  const invoicePeriod = propInvoicePeriod || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
   return (
     <div className="w-full bg-white text-black font-sans border-2 border-black text-sm print:border-2">

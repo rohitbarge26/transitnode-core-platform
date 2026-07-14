@@ -45,6 +45,8 @@ const ConsolidatedInvoiceModal = ({ invoice, onClose }) => {
         sgst={invoice.financials.taxAmount / 2}
         grandTotal={invoice.financials.grandTotal}
         isEditable={false}
+        invoiceDate={new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
+        invoicePeriod={new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
       />
       <div className="text-center text-sm text-gray-500 mt-12 pt-4 sm:pt-6 md:pt-8 border-t border-gray-200 print:hidden">
         <p>This is a computer generated master invoice and does not require a signature.</p>

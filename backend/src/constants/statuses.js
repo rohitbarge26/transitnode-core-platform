@@ -1,0 +1,32 @@
+const STATUSES = {
+  // Payment Statuses
+  PAID: 'PAID',
+  PENDING: 'PENDING',
+  PARTIALLY_PAID: 'PARTIALLY_PAID',
+  SUCCESS: 'SUCCESS',
+
+  // Asset/Vehicle Statuses
+  AVAILABLE: 'AVAILABLE',
+  ON_TRIP: 'ON_TRIP',
+  YARD: 'YARD',
+
+  // Trip/Shipment Statuses
+  OPEN: 'OPEN',
+  READY_FOR_DISPATCH: 'READY_FOR_DISPATCH',
+  DELIVERED: 'DELIVERED',
+  ARRIVED: 'ARRIVED',
+  
+  // Transactions
+  MATCHED: 'MATCHED',
+  UNMATCHED: 'UNMATCHED',
+
+  // POD
+  COLLECTED: 'COLLECTED',
+  VERIFIED: 'VERIFIED',
+  
+  // Portal
+  UPLOADED: 'UPLOADED',
+  DISPUTED: 'DISPUTED',
+};
+
+module.exports = STATUSES;

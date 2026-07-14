@@ -21,6 +21,20 @@ const companySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    identifierType: {
+      type: String,
+      default: ''
+    },
+    supportedBillingCycles: [
+      {
+        type: String,
+      },
+    ],
+    supportedInvoiceTypes: [
+      {
+        type: String,
+      },
+    ],
     state: {
       type: String,
     },
@@ -42,6 +56,10 @@ const companySchema = new mongoose.Schema(
       type: String,
       enum: ['TAX_INVOICE', 'BILL_OF_SUPPLY', 'SIMPLIFIED_3_COL'],
       default: 'TAX_INVOICE',
+    },
+    requireDriverMobileApp: {
+      type: Boolean,
+      default: false,
     },
   },
   {

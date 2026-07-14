@@ -48,7 +48,7 @@ const AdminDashboard = () => {
   const [sisterCompanyForm, setSisterCompanyForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', invoiceTemplate: null });
   const [sisterCompanyLoading, setSisterCompanyLoading] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState(null);
-  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', logoUrl: '', logoFile: null, dominantHexColor: '' });
+  const [editWorkspaceForm, setEditWorkspaceForm] = useState({ companyName: '', gstin: '', pan: '', address: '', state: '', stateCode: '', contactNumber: '', logoUrl: '', logoFile: null, dominantHexColor: '', requireDriverMobileApp: false });
   const [editWorkspaceLoading, setEditWorkspaceLoading] = useState(false);
 
   // Subscription State
@@ -2416,7 +2416,8 @@ const AdminDashboard = () => {
                               contactNumber: (subscriptionDetails.contactNumber && subscriptionDetails.contactNumber.trim() !== '') ? subscriptionDetails.contactNumber : (subscriptionDetails.registeredMobile || ''),
                               logoUrl: subscriptionDetails.brandingOptions?.logoUrl || '',
                               logoFile: null,
-                              dominantHexColor: subscriptionDetails.brandingOptions?.dominantHexColor || '#3b82f6'
+                              dominantHexColor: subscriptionDetails.brandingOptions?.dominantHexColor || '#3b82f6',
+                              requireDriverMobileApp: subscriptionDetails.requireDriverMobileApp || false
                             });
                           }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
                         </td>
@@ -2441,7 +2442,8 @@ const AdminDashboard = () => {
                                 address: ws.address || '',
                                 state: ws.state || '',
                                 stateCode: ws.stateCode || '',
-                                contactNumber: (ws.contactNumber && ws.contactNumber.trim() !== '') ? ws.contactNumber : (subscriptionDetails.registeredMobile || '')
+                                contactNumber: (ws.contactNumber && ws.contactNumber.trim() !== '') ? ws.contactNumber : (subscriptionDetails.registeredMobile || ''),
+                                requireDriverMobileApp: ws.requireDriverMobileApp || false
                               });
                             }} className="text-indigo-600 hover:text-indigo-900 font-medium mr-4">Edit</button>
                             <button onClick={() => handleDeleteWorkspace(ws._id)} className="text-red-600 hover:text-red-900 font-medium">Delete</button>
@@ -2516,6 +2518,14 @@ const AdminDashboard = () => {
                                 </div>
                               </div>
                             </div>
+                          </div>
+                        )}
+                        
+                        {/* Require Driver App Flag (Only for Primary Workspace as requested) */}
+                        {editingWorkspace.isPrimary && (
+                          <div className="mt-4 flex items-center space-x-3">
+                            <input type="checkbox" id="editRequireDriverApp" checked={editWorkspaceForm.requireDriverMobileApp || false} onChange={e => setEditWorkspaceForm({...editWorkspaceForm, requireDriverMobileApp: e.target.checked})} className="w-5 h-5 accent-indigo-600 rounded cursor-pointer" />
+                            <label htmlFor="editRequireDriverApp" className="text-sm font-medium text-slate-700 cursor-pointer">Require driver Mobile app</label>
                           </div>
                         )}
                         {subscriptionDetails.planType === 'LIFETIME' && (

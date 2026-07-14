@@ -4,7 +4,10 @@ const Tenant = require('../models/NoSQL/Tenant');
 const addSisterCompany = async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
-    const { companyName, gstin, pan, address, state, stateCode, contactNumber } = req.body;
+    const { 
+      companyName, gstin, pan, address, state, stateCode, contactNumber,
+      identifierType, supportedBillingCycles, supportedInvoiceTypes
+    } = req.body;
 
     if (!companyName || !address) {
       return res.status(400).json({ success: false, message: 'Company Name and Address are required.' });
@@ -19,6 +22,9 @@ const addSisterCompany = async (req, res) => {
       state,
       stateCode,
       contactNumber,
+      identifierType,
+      supportedBillingCycles,
+      supportedInvoiceTypes,
       isActive: true,
       customInvoiceTemplateUrl: req.file ? `/uploads/${req.file.filename}` : null,
     });
@@ -61,6 +67,7 @@ const getWorkspaces = async (req, res) => {
         gstin: tenant.gstin,
         pan: tenant.pan,
         contactNumber: (tenant.contactNumber && tenant.contactNumber.trim() !== '') ? tenant.contactNumber.trim() : tenant.registeredMobile,
+        requireDriverMobileApp: tenant.requireDriverMobileApp,
         isMainTenant: true
       });
     }
@@ -80,7 +87,10 @@ const updateCompany = async (req, res) => {
     const { id } = req.params;
     const tenantId = req.user?.tenantId;
     
-    const { companyName, gstin, pan, address, state, stateCode, contactNumber } = req.body;
+    const { 
+      companyName, gstin, pan, address, state, stateCode, contactNumber,
+      identifierType, supportedBillingCycles, supportedInvoiceTypes, requireDriverMobileApp
+    } = req.body;
 
     const company = await Company.findOne({ _id: id, tenantId });
     if (!company) {
@@ -94,6 +104,10 @@ const updateCompany = async (req, res) => {
     if (state !== undefined) company.state = state;
     if (stateCode !== undefined) company.stateCode = stateCode;
     if (contactNumber) company.contactNumber = contactNumber;
+    if (identifierType !== undefined) company.identifierType = identifierType;
+    if (supportedBillingCycles !== undefined) company.supportedBillingCycles = supportedBillingCycles;
+    if (supportedInvoiceTypes !== undefined) company.supportedInvoiceTypes = supportedInvoiceTypes;
+    if (requireDriverMobileApp !== undefined) company.requireDriverMobileApp = requireDriverMobileApp;
 
     await company.save();
 

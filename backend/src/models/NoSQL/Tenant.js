@@ -69,6 +69,10 @@ const tenantSchema = new mongoose.Schema(
         default: '#3b82f6', // Default blue-500
       },
     },
+    requireDriverMobileApp: {
+      type: Boolean,
+      default: false,
+    },
     customInvoiceTemplateUrl: {
       type: String,
       default: null,

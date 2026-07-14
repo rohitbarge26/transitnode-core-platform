@@ -13,13 +13,15 @@ const IntakeDashboard = () => {
   const [generatedShipment, setGeneratedShipment] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeRateCard, setActiveRateCard] = useState(null);
+  const [runSheets, setRunSheets] = useState([]);
 
   const [formData, setFormData] = useState({
-    senderName: '', senderPhone: '',
+    senderCompany: '', senderName: '', senderPhone: '',
     senderAddress: '', senderGstin: '', senderPostalCode: '', senderDropOff: false,
     receiverName: '', receiverPhone: '',
     receiverAddress: '', receiverGstin: '', receiverPostalCode: '', receiverSelfCollect: false, receiverClientCode: '',
-    vehicleNumber: '', vehicleType: '14-Ft Container',
+    vehicleNumber: '', parentVehicleNumber: '', vehicleType: '14-Ft Container',
     driverName: '', driverPhone: '',
     origin: '', destination: '',
     commodityType: '',
@@ -34,10 +36,12 @@ const IntakeDashboard = () => {
   const [uploadingLr, setUploadingLr] = useState(false);
   const [viewingLrShipment, setViewingLrShipment] = useState(null);
 
-  const isFlipkartSelected = formData.receiverName && (
-    formData.receiverName.toLowerCase().includes('flipkart') ||
-    formData.receiverName.toLowerCase().includes('fliptkart')
-  );
+  const selectedSupplierObj = suppliers.find(s => s.supplierName === formData.receiverName);
+  const dynamicIdentifierLabel = selectedSupplierObj?.identifierType || 'Client / Store Code';
+  const isIdentifierRequired = selectedSupplierObj ? !!selectedSupplierObj.identifierType : false;
+
+  const selectedCompanyObj = workspaces.find(w => w.companyName === formData.senderCompany);
+  const requireDriverApp = selectedCompanyObj?.requireDriverMobileApp || false;
 
   useEffect(() => {
     fetchRecentShipments();
@@ -45,9 +49,37 @@ const IntakeDashboard = () => {
     fetchFleet();
     fetchSuppliers();
     fetchWorkspaces();
+    fetchRunSheets();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const fetchRateCard = async () => {
+      const targetComp = workspaces.find(w => w.companyName === formData.senderCompany);
+      const targetSup = suppliers.find(s => s.supplierName === formData.receiverName);
+      
+      if (targetSup) {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await axios.get('/api/admin/rates', {
+            params: { 
+              companyId: targetComp ? targetComp._id : 'MAIN', 
+              supplierId: targetSup._id 
+            },
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setActiveRateCard(res.data);
+        } catch (err) {
+          console.error("Failed to fetch rate card:", err);
+        }
+      } else {
+        setActiveRateCard(null);
+      }
+    };
+    
+    fetchRateCard();
+  }, [formData.senderCompany, formData.receiverName, workspaces, suppliers]);
 
   const handleGenerateLrOnline = async (trackingId) => {
     setUploadingLr(true);
@@ -217,6 +249,17 @@ const IntakeDashboard = () => {
     }
   };
 
+  const fetchRunSheets = async () => {
+    try {
+      const response = await axios.get('/api/admin/runsheets', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setRunSheets(response.data.runSheets || []);
+    } catch (err) {
+      console.error("Error fetching run sheets", err);
+    }
+  };
+
   const handleDriverSelection = (e) => {
     const selectedDriverId = e.target.value;
     if (!selectedDriverId) {
@@ -296,22 +339,50 @@ const IntakeDashboard = () => {
   const handleSenderSelection = (e) => {
     const name = e.target.value;
     const workspace = workspaces.find(w => w.companyName === name);
+    const supplier = suppliers.find(s => s.supplierName === name);
     
     let extractedPostalCode = '400703';
-    if (workspace && workspace.address) {
-      const match = workspace.address.match(/\b\d{6}\b/);
-      if (match) {
-        extractedPostalCode = match[0];
+    let address = '';
+    let phone = '';
+    let gstin = '';
+    let postalCode = '';
+
+    if (workspace) {
+      if (workspace.address) {
+        const match = workspace.address.match(/\b\d{6}\b/);
+        if (match) extractedPostalCode = match[0];
+      }
+      address = workspace.address || '';
+      phone = workspace.contactNumber || '';
+      gstin = workspace.gstin || '';
+      postalCode = workspace.postalCode || extractedPostalCode;
+    } else if (supplier) {
+      if (supplier.address) {
+        const match = supplier.address.match(/\b\d{6}\b/);
+        if (match) extractedPostalCode = match[0];
+      }
+      address = supplier.address || '';
+      phone = supplier.contactNumber || supplier.phone || '';
+      gstin = supplier.gstin || '';
+      postalCode = supplier.postalCode || extractedPostalCode;
+    }
+
+    let originCity = '';
+    if (address) {
+      const parts = address.split(',');
+      if (parts.length >= 2) {
+        originCity = parts[parts.length - 2].trim().replace(/\d/g, '').trim();
       }
     }
 
     setFormData(prev => ({
       ...prev,
       senderName: name,
-      senderPhone: workspace ? workspace.contactNumber || '' : prev.senderPhone,
-      senderAddress: workspace ? workspace.address || '' : prev.senderAddress,
-      senderGstin: workspace ? workspace.gstin || '' : prev.senderGstin,
-      senderPostalCode: workspace ? workspace.postalCode || extractedPostalCode : prev.senderPostalCode
+      senderPhone: phone || prev.senderPhone,
+      senderAddress: address || prev.senderAddress,
+      senderGstin: gstin || prev.senderGstin,
+      senderPostalCode: postalCode || prev.senderPostalCode,
+      origin: originCity || prev.origin
     }));
   };
 
@@ -343,7 +414,29 @@ const IntakeDashboard = () => {
     if (name === 'vehicleNumber') {
       val = formatVehicleNumber(value);
     }
-    setFormData(prev => ({ ...prev, [name]: val }));
+
+    let extraUpdates = {};
+    if (name === 'receiverClientCode') {
+      if (selectedSupplierObj?.identifierType === 'Store Code' && activeRateCard) {
+        const rowsB = activeRateCard.rows?.TEMPLATE_B || [];
+        const match = rowsB.find(r => r.storeCode?.toUpperCase() === val.toUpperCase());
+        if (match) {
+          if (match.location) extraUpdates.receiverAddress = match.location;
+          extraUpdates.destination = match.city || match.location || '';
+        }
+      } else if (selectedSupplierObj?.identifierType === 'Hub Name') {
+        extraUpdates.destination = val;
+        if (runSheets && runSheets.length > 0) {
+          const matchingRunSheet = runSheets.find(rs => rs.sourceHubName === val);
+          if (matchingRunSheet) {
+            extraUpdates.vehicleNumber = matchingRunSheet.vehicleNumber || '';
+            extraUpdates.vehicleType = matchingRunSheet.vehicleType || '';
+          }
+        }
+      }
+    }
+
+    setFormData(prev => ({ ...prev, [name]: val, ...extraUpdates }));
   };
 
   const handleSubmit = async (e) => {
@@ -351,8 +444,8 @@ const IntakeDashboard = () => {
     setLoading(true);
     setError('');
 
-    if (isFlipkartSelected && !formData.receiverClientCode?.trim()) {
-      setError('Store Code is required when Flipkart is selected as the supplier.');
+    if (isIdentifierRequired && !formData.receiverClientCode?.trim()) {
+      setError(`${dynamicIdentifierLabel} is required when ${selectedSupplierObj?.supplierName || 'this supplier'} is selected as the supplier.`);
       setLoading(false);
       return;
     }
@@ -360,16 +453,49 @@ const IntakeDashboard = () => {
     try {
       const selectedWorkspace = workspaces.find(w => w.companyName === formData.senderName);
       const workspaceId = selectedWorkspace ? selectedWorkspace._id : 'MAIN';
+      const isMonthlyInvoice = selectedSupplierObj?.supportedBillingCycles?.includes('MONTHLY') && !selectedSupplierObj?.supportedBillingCycles?.includes('DAILY');
+
+      let calculatedBaseRate = 0;
+      if (activeRateCard && selectedSupplierObj) {
+        if (selectedSupplierObj.identifierType === 'Store Code') {
+          const rowsB = activeRateCard.rows?.TEMPLATE_B || [];
+          const match = rowsB.find(r => r.storeCode?.toUpperCase() === formData.receiverClientCode?.toUpperCase());
+          if (match) {
+            const vType = formData.vehicleType;
+            if (vType === 'Tata ace') calculatedBaseRate = Number(match.tataAceRate) || 0;
+            else if (vType === 'Tata 407') calculatedBaseRate = Number(match.tata407Rate) || 0;
+            else if (vType === '14FT') calculatedBaseRate = Number(match.rate14ft) || 0;
+            else if (vType === '17FT') calculatedBaseRate = Number(match.rate17ft) || 0;
+            else if (vType === '20FT') calculatedBaseRate = Number(match.rate20ft) || 0;
+            else if (vType === '32FT 7 TON') calculatedBaseRate = Number(match.rate32ft7ton) || 0;
+            else if (vType === '32FT 9 TON') calculatedBaseRate = Number(match.rate32ft9ton) || 0;
+            else if (vType === '32FT 10 TON') calculatedBaseRate = Number(match.rate32ft10ton) || 0;
+            else if (vType === '32FT 15 TON') calculatedBaseRate = Number(match.rate32ft15ton) || 0;
+          }
+        } else if (selectedSupplierObj.identifierType === 'Hub Name') {
+          if (runSheets && runSheets.length > 0) {
+            // Find the active run sheet for this Hub Name
+            const match = runSheets.find(rs => rs.sourceHubName?.toUpperCase() === formData.receiverClientCode?.toUpperCase());
+            if (match) {
+              calculatedBaseRate = Number(match.freight) || Number(match.totalAmt) || 0;
+            }
+          }
+        }
+      }
 
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/shipments/create', formData, {
+      const response = await axios.post('/api/shipments/create', { ...formData, isMonthlyInvoice, baseRateApplied: calculatedBaseRate }, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'x-workspace-id': workspaceId
         }
       });
       
-      setGeneratedShipment(response.data.shipment);
+      if (isMonthlyInvoice) {
+        alert('Shipment Created Successfully! (No LR required for Monthly Invoice trips)');
+      } else {
+        setGeneratedShipment(response.data.shipment);
+      }
       setFormData({
         senderName: '', senderPhone: '',
         senderAddress: '', senderGstin: '', senderPostalCode: '', senderDropOff: false,
@@ -442,6 +568,17 @@ const IntakeDashboard = () => {
             
             <form onSubmit={handleSubmit} className="space-y-8">
               
+              <div className="mb-6 relative">
+                <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Company Name</label>
+                <select name="senderCompany" value={formData.senderCompany} onChange={handleChange} required 
+                  className={inputClasses('senderCompany')} onFocus={() => setFocusedField('senderCompany')} onBlur={() => setFocusedField(null)}>
+                  <option value="">-- Select Company --</option>
+                  {workspaces.map(w => (
+                    <option key={`comp-w-${w._id}`} value={w.companyName}>{w.companyName} {w.state ? `(${w.state})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Sender Section */}
                 <div className="space-y-4 bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300">
@@ -451,20 +588,26 @@ const IntakeDashboard = () => {
                     </div>
                     <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Consignor (Sender)</h3>
                   </div>
+
                   <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Branch / Company Name</label>
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Branch / Consignor Name</label>
                     <select name="senderName" value={formData.senderName} onChange={handleSenderSelection} required 
                       className={inputClasses('senderName')} onFocus={() => setFocusedField('senderName')} onBlur={() => setFocusedField(null)}>
                       <option value="">-- Select Branch --</option>
+                      <option value="" disabled className="bg-gray-800 font-bold text-gray-400">── Workspaces ──</option>
                       {workspaces.map(w => (
-                        <option key={w._id} value={w.companyName}>{w.companyName} {w.state ? `(${w.state})` : ''}</option>
+                        <option key={`br-w-${w._id}`} value={w.companyName}>{w.companyName} {w.state ? `(${w.state})` : ''}</option>
+                      ))}
+                      <option value="" disabled className="bg-gray-800 font-bold text-gray-400">── Suppliers ──</option>
+                      {suppliers.map(s => (
+                        <option key={`br-s-${s._id}`} value={s.supplierName}>{s.supplierName} {s.state ? `(${s.state})` : ''}</option>
                       ))}
                     </select>
                   </div>
                   <div className="relative">
                     <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Address</label>
-                    <input type="text" name="senderAddress" value={formData.senderAddress} onChange={handleChange} required 
-                      className={inputClasses('senderAddress')} onFocus={() => setFocusedField('senderAddress')} onBlur={() => setFocusedField(null)} />
+                    <input type="text" name="senderAddress" value={formData.senderAddress} onChange={handleChange} required readOnly
+                      className={`${inputClasses('senderAddress')} opacity-80 cursor-not-allowed`} onFocus={() => setFocusedField('senderAddress')} onBlur={() => setFocusedField(null)} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="relative">
@@ -502,11 +645,13 @@ const IntakeDashboard = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Address</label>
-                    <input type="text" name="receiverAddress" value={formData.receiverAddress} onChange={handleChange} required 
-                      className={inputClasses('receiverAddress')} onFocus={() => setFocusedField('receiverAddress')} onBlur={() => setFocusedField(null)} />
-                  </div>
+                  {selectedSupplierObj?.identifierType !== 'Hub Name' && (
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Address</label>
+                      <input type="text" name="receiverAddress" value={formData.receiverAddress} onChange={handleChange} required 
+                        className={inputClasses('receiverAddress')} onFocus={() => setFocusedField('receiverAddress')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="relative">
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">GST No. (Optional)</label>
@@ -520,19 +665,21 @@ const IntakeDashboard = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="relative">
-                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Receiver Phone / Gate Contact</label>
-                      <input type="text" name="receiverPhone" value={formData.receiverPhone} onChange={handleChange} required 
-                        className={inputClasses('receiverPhone')} onFocus={() => setFocusedField('receiverPhone')} onBlur={() => setFocusedField(null)} placeholder="e.g. 9876543210" />
-                    </div>
-                    <div className="relative">
+                    {requireDriverApp && (
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-purple-400">Receiver Phone / Gate Contact</label>
+                        <input type="text" name="receiverPhone" value={formData.receiverPhone} onChange={handleChange} required 
+                          className={inputClasses('receiverPhone')} onFocus={() => setFocusedField('receiverPhone')} onBlur={() => setFocusedField(null)} placeholder="e.g. 9876543210" />
+                      </div>
+                    )}
+                    <div className={`relative ${!requireDriverApp ? 'sm:col-span-2' : ''}`}>
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[8px] font-bold text-purple-400">
-                        Client / Store Code {isFlipkartSelected && <span className="text-red-500">*</span>}
+                        {dynamicIdentifierLabel} {isIdentifierRequired && <span className="text-red-500">*</span>}
                       </label>
                       <input type="text" name="receiverClientCode" value={formData.receiverClientCode} onChange={handleChange} 
-                        required={isFlipkartSelected}
+                        required={isIdentifierRequired}
                         className={inputClasses('receiverClientCode')} onFocus={() => setFocusedField('receiverClientCode')} onBlur={() => setFocusedField(null)} 
-                        placeholder={isFlipkartSelected ? "Compulsory for Flipkart" : "Optional"} />
+                        placeholder={isIdentifierRequired ? `Compulsory for ${selectedSupplierObj?.supplierName}` : "Optional"} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">
@@ -552,60 +699,134 @@ const IntakeDashboard = () => {
                   </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Registration Number</label>
-                    <select name="vehicleNumber" value={formData.vehicleNumber} onChange={handleVehicleSelection} required 
-                      className={inputClasses('vehicleNumber')} onFocus={() => setFocusedField('vehicleNumber')} onBlur={() => setFocusedField(null)}>
-                      <option value="">-- Select Available Vehicle --</option>
-                      {fleet.map((v) => (
-                        <option key={v._id} value={v.vehicleRegistration}>
-                          {v.vehicleRegistration}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Type</label>
-                    <input 
-                      type="text" 
-                      list="intake-vehicle-types"
-                      name="vehicleType" 
-                      value={formData.vehicleType} 
-                      onChange={handleChange} 
-                      required
-                      className={inputClasses('vehicleType')} 
-                      onFocus={() => setFocusedField('vehicleType')} 
-                      onBlur={() => setFocusedField(null)} 
-                      placeholder="Select or type..."
-                    />
-                    <datalist id="intake-vehicle-types">
-                      {[...new Set(['14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', ...fleet.map(a => a.vehicleType).filter(Boolean)])].map(type => (
-                        <option key={type} value={type} />
-                      ))}
-                    </datalist>
-                  </div>
+                  {(selectedSupplierObj?.identifierType === 'Hub Name' || selectedSupplierObj?.identifierType === 'Store Code') ? (
+                    <>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Registration Number</label>
+                        <input type="text" name="vehicleNumber" value={formData.vehicleNumber} onChange={handleChange} required
+                          readOnly={selectedSupplierObj?.identifierType === 'Hub Name'}
+                          className={`${inputClasses('vehicleNumber')} ${selectedSupplierObj?.identifierType === 'Hub Name' ? 'opacity-80 cursor-not-allowed' : ''}`}
+                          onFocus={() => setFocusedField('vehicleNumber')} onBlur={() => setFocusedField(null)} 
+                          placeholder={selectedSupplierObj?.identifierType === 'Hub Name' ? 'Auto-filled from Run Sheet' : 'Enter Vehicle Number'} />
+                      </div>
+                      {selectedSupplierObj?.identifierType === 'Hub Name' && (
+                        <div className="relative">
+                          <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Parent Vehicle Number</label>
+                          <input type="text" name="parentVehicleNumber" value={formData.parentVehicleNumber} onChange={handleChange}
+                            className={inputClasses('parentVehicleNumber')} onFocus={() => setFocusedField('parentVehicleNumber')} onBlur={() => setFocusedField(null)}
+                            placeholder="Enter if absent" />
+                        </div>
+                      )}
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Type</label>
+                        {selectedSupplierObj?.identifierType === 'Hub Name' ? (
+                          <input type="text" name="vehicleType" value={formData.vehicleType} onChange={handleChange} required
+                            readOnly
+                            className={`${inputClasses('vehicleType')} opacity-80 cursor-not-allowed`}
+                            onFocus={() => setFocusedField('vehicleType')} onBlur={() => setFocusedField(null)}
+                            placeholder="Auto-filled" />
+                        ) : (
+                          <select 
+                            name="vehicleType" 
+                            value={formData.vehicleType} 
+                            onChange={handleChange} 
+                            required
+                            className={`${inputClasses('vehicleType')} bg-[#111827]`} 
+                            onFocus={() => setFocusedField('vehicleType')} 
+                            onBlur={() => setFocusedField(null)} 
+                          >
+                            <option value="">-- Select Vehicle Type --</option>
+                            {[
+                              'Tata 407', 'Tata ace', '14FT', '17FT', '20FT', 
+                              '32FT 7 TON', '32FT 9 TON', '32FT 10 TON', '32FT 15 TON'
+                            ].map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Registration Number</label>
+                        <select name="vehicleNumber" value={formData.vehicleNumber} onChange={handleVehicleSelection} required 
+                          className={`${inputClasses('vehicleNumber')} bg-[#111827]`} onFocus={() => setFocusedField('vehicleNumber')} onBlur={() => setFocusedField(null)}>
+                          <option value="">-- Select Available Vehicle --</option>
+                          {fleet.map((v) => (
+                            <option key={v._id} value={v.vehicleRegistration}>
+                              {v.vehicleRegistration}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Type</label>
+                        <select 
+                          name="vehicleType" 
+                          value={formData.vehicleType} 
+                          onChange={handleChange} 
+                          required
+                          className={`${inputClasses('vehicleType')} bg-[#111827]`} 
+                          onFocus={() => setFocusedField('vehicleType')} 
+                          onBlur={() => setFocusedField(null)} 
+                        >
+                          <option value="">-- Select Vehicle Type --</option>
+                          {[...new Set([
+                            'Van (or Eeco)', 'Mini Truck (Ace)', 'Pickup Truck', 'Truck (407)', 
+                            '14-Ft Container', 'Large Truck 17ft', 'Large Truck 19ft/20ft', 
+                            'Large Truck 22ft/24ft', '32FT SXL', '32FT MXL',
+                            'Tata 407', 'Tata ace', '14FT', '17FT', '20FT', 
+                            '32FT 7 TON', '32FT 9 TON', '32FT 10 TON', '32FT 15 TON',
+                            ...fleet.map(a => a.vehicleType).filter(Boolean)
+                          ])].map(type => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Name</label>
-                    <select 
-                      value={drivers.find(d => d.name === formData.driverName)?._id || ''} 
-                      onChange={handleDriverSelection} required
-                      className={inputClasses('driverSelection')} onFocus={() => setFocusedField('driverSelection')} onBlur={() => setFocusedField(null)}>
-                      <option value="">-- Select Driver --</option>
-                      {drivers.map((d) => (
-                        <option key={d._id} value={d._id}>
-                          {d.name} ({d.phone})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Mobile</label>
-                    <input type="text" name="driverPhone" value={formData.driverPhone} placeholder="Auto-filled" readOnly 
-                      className={`${inputClasses('driverPhone')} opacity-60 cursor-not-allowed`} />
-                  </div>
+                  {(selectedSupplierObj?.identifierType === 'Hub Name' || selectedSupplierObj?.identifierType === 'Store Code') ? (
+                    <>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Name</label>
+                        <input type="text" name="driverName" value={formData.driverName} onChange={handleChange} required
+                          className={inputClasses('driverName')} onFocus={() => setFocusedField('driverName')} onBlur={() => setFocusedField(null)}
+                          placeholder="Enter Driver Name" />
+                      </div>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Mobile</label>
+                        <input type="text" name="driverPhone" value={formData.driverPhone} onChange={handleChange} required
+                          className={inputClasses('driverPhone')} onFocus={() => setFocusedField('driverPhone')} onBlur={() => setFocusedField(null)}
+                          placeholder="Enter Driver Mobile" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Name</label>
+                        <select 
+                          value={drivers.find(d => d.name === formData.driverName)?._id || ''} 
+                          onChange={handleDriverSelection} required
+                          className={inputClasses('driverSelection')} onFocus={() => setFocusedField('driverSelection')} onBlur={() => setFocusedField(null)}>
+                          <option value="">-- Select Driver --</option>
+                          {drivers.map((d) => (
+                            <option key={d._id} value={d._id}>
+                              {d.name} ({d.phone})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="relative">
+                        <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-blue-400">Driver Mobile</label>
+                        <input type="text" name="driverPhone" value={formData.driverPhone} placeholder="Auto-filled" readOnly 
+                          className={`${inputClasses('driverPhone')} opacity-60 cursor-not-allowed`} />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -801,9 +1022,13 @@ const IntakeDashboard = () => {
                             {ship.lrCopyUrl ? (
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-green-400 font-bold flex items-center gap-1">
-                                  ✓ LR Generated
+                                  {ship.lrCopyUrl === 'MONTHLY_INVOICE' ? '✓ Trip Logged' : '✓ LR Generated'}
                                 </span>
-                                {ship.lrCopyUrl === 'ONLINE' ? (
+                                {ship.lrCopyUrl === 'MONTHLY_INVOICE' ? (
+                                  <span className="text-xs text-blue-400 font-bold bg-blue-900/30 px-2 py-0.5 rounded">
+                                    Monthly Invoice
+                                  </span>
+                                ) : ship.lrCopyUrl === 'ONLINE' ? (
                                   <button
                                     type="button"
                                     onClick={() => setViewingLrShipment(ship)}

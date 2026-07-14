@@ -6,7 +6,7 @@ const { verifyWebhookSignature } = require('../config/cashfree');
 
 exports.registerTenant = async (req, res) => {
   try {
-    const { companyName, registeredMobile, customSubdomain, planTier, logoUrl, dominantHexColor } = req.body;
+    const { companyName, registeredMobile, customSubdomain, planTier, logoUrl, dominantHexColor, requireDriverMobileApp } = req.body;
 
     if (!companyName || !registeredMobile || !customSubdomain) {
       return res.status(400).json({ error: 'companyName, registeredMobile, and customSubdomain are required' });
@@ -49,6 +49,7 @@ exports.registerTenant = async (req, res) => {
       planType: mappedPlanType,
       licenseExpiresAt,
       paymentStatus: mappedPlanType === 'TRIAL' ? 'PAID' : 'PENDING',
+      requireDriverMobileApp: requireDriverMobileApp || false,
       brandingOptions: {
         logoUrl: logoUrl || null,
         dominantHexColor: dominantHexColor || '#3b82f6',
@@ -360,7 +361,7 @@ exports.updateTenantProfile = async (req, res) => {
     console.log('req.user:', req.user);
     console.log('tenantId:', tenantId);
     
-    const { companyName, gstin, pan, address, state, stateCode, contactNumber, logoUrl, dominantHexColor } = req.body;
+    const { companyName, gstin, pan, address, state, stateCode, contactNumber, logoUrl, dominantHexColor, requireDriverMobileApp } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
     console.log('Found tenant:', tenant ? tenant._id : 'NOT FOUND');
@@ -375,6 +376,10 @@ exports.updateTenantProfile = async (req, res) => {
     if (state !== undefined) tenant.state = state;
     if (stateCode !== undefined) tenant.stateCode = stateCode;
     if (contactNumber !== undefined) tenant.contactNumber = contactNumber;
+    if (requireDriverMobileApp !== undefined) {
+      // Need to convert string 'true'/'false' to boolean since FormData sends strings
+      tenant.requireDriverMobileApp = requireDriverMobileApp === 'true' || requireDriverMobileApp === true;
+    }
     
     // Update brandingOptions if provided
     if (req.file || logoUrl !== undefined || dominantHexColor !== undefined) {

@@ -450,6 +450,10 @@ const PricingPortal = () => {
                       <span className="bg-slate-100 border border-slate-200 border-l-0 text-slate-500 px-3 md:px-5 py-4 font-medium flex items-center text-xs md:text-sm whitespace-nowrap">.prohitcoretech.in</span>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-3 pt-2">
+                    <input type="checkbox" id="requireDriverApp" checked={formData.requireDriverMobileApp || false} onChange={e => setFormData({...formData, requireDriverMobileApp: e.target.checked})} className="w-5 h-5 accent-teal-600 rounded cursor-pointer" />
+                    <label htmlFor="requireDriverApp" className="text-sm font-bold text-slate-700 cursor-pointer">Require Driver Mobile App</label>
+                  </div>
                   <div className="pt-4 sm:pt-6 md:pt-8 flex items-center justify-end space-x-4 border-t border-slate-100">
                     <button type="button" onClick={() => setShowModal(false)} className="px-3 sm:px-4 md:px-6 py-3 rounded-xl font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all text-lg">Cancel</button>
                     <button type="submit" disabled={loading} className="bg-teal-600 hover:bg-teal-500 text-white px-4 sm:px-6 md:px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-teal-600/25 text-lg flex items-center">

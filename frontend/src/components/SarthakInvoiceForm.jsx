@@ -26,10 +26,12 @@ const SarthakInvoiceForm = ({
   companyPan = "ABJHS2600A",
   receiverAddress = "F1, Block 1-7, Antriksh Warehousing Complex, Village Dahole, Off. Mumbai Nashik Highway, Bhiwandi - 421302",
   receiverGstin = "N/A",
-  receiverPan = "N/A"
+  receiverPan = "N/A",
+  invoiceDate: propInvoiceDate,
+  invoicePeriod: propInvoicePeriod
 }) => {
-  const invoiceDate = new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
-  const invoicePeriod = new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  const invoiceDate = propInvoiceDate || new Date(invoice.metadata?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+  const invoicePeriod = propInvoicePeriod || new Date(invoice.metadata?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
   const grandTotalInWords = numberToWords(Math.round(grandTotal || 0));
 
   return (

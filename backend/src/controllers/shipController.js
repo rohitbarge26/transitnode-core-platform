@@ -75,11 +75,11 @@ const geocodeAddress = (address) => {
 exports.createShipment = async (req, res) => {
   try {
     const { 
-      senderName, senderPhone, senderAddress, senderGstin, senderPostalCode, senderDropOff,
+      senderCompany, senderName, senderPhone, senderAddress, senderGstin, senderPostalCode, senderDropOff,
       receiverName, receiverPhone, receiverAddress, receiverGstin, receiverPostalCode, receiverSelfCollect, receiverClientCode,
       weight_kg, dimensions, actualWeight, chargedWeight, packingType, fragile, 
       invoiceNo, invoiceDate, invoiceValue, ewayBillNo, riskCoverage,
-      vehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType 
+      vehicleNumber, parentVehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType 
     } = req.body;
 
     const isFlipkartSelected = receiverName && (
@@ -106,8 +106,8 @@ exports.createShipment = async (req, res) => {
     }
     const trackingNumber = `TR-${currentYear}-${nextNum}`;
     
-    // Base estimation logic
-    const baseRateApplied = 5000; // Flat transport rate default
+    // Base estimation logic - Read from request if provided, otherwise default to 0
+    const baseRateApplied = Number(req.body.baseRateApplied) || 0;
     const subtotal = baseRateApplied;
     
     // Dynamically resolve destination coordinates (using exact consignee address with hub name fallback)
@@ -127,13 +127,14 @@ exports.createShipment = async (req, res) => {
       destinationLat: lat,
       destinationLng: lng,
       status: 'READY_FOR_DISPATCH',
-      lrCopyUrl: 'ONLINE',
+      lrCopyUrl: req.body.isMonthlyInvoice ? 'MONTHLY_INVOICE' : 'ONLINE',
       podStatus: 'COLLECTED',
       metadata: {
         receptionistId: req.user?.id
       },
       logistics: {
         sender: { 
+          company: senderCompany,
           name: senderName, 
           phone: senderPhone,
           address: senderAddress,
@@ -165,6 +166,7 @@ exports.createShipment = async (req, res) => {
         },
         transport: {
           vehicleNumber: vehicleNumber ? vehicleNumber.toUpperCase() : undefined,
+          parentVehicleNumber,
           vehicleType,
           driverName,
           driverPhone,
@@ -176,7 +178,8 @@ exports.createShipment = async (req, res) => {
       },
       accounting: {
         baseRateApplied,
-        subtotal
+        subtotal,
+        billingCycle: req.body.isMonthlyInvoice ? 'MONTHLY' : 'DAILY'
       }
     });
 

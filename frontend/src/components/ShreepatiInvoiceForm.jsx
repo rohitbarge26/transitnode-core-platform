@@ -20,10 +20,12 @@ const ShreepatiInvoiceForm = ({
   baseFreightRate, setBaseFreightRate,
   rcmApplied, setRcmApplied,
   cgst, sgst, grandTotal,
-  companyName = "SHREEPATI TRANSPORT"
+  companyName = "SHREEPATI TRANSPORT",
+  invoiceDate: propInvoiceDate,
+  invoicePeriod: propInvoicePeriod
 }) => {
-  const invoiceDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
-  const servicePeriod = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+  const invoiceDate = propInvoiceDate || new Date(invoice?.metadata?.createdAt || Date.now()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+  const servicePeriod = propInvoicePeriod || new Date(invoice?.metadata?.createdAt || Date.now()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
   const totalInWords = numberToWords(Math.round(grandTotal || baseFreightRate || 0));
 
   return (

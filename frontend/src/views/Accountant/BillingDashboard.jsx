@@ -115,7 +115,7 @@ const BillingDashboard = () => {
   // Reset form inputs when a new shipment is selected
   useEffect(() => {
     if (selectedInvoice) {
-      setBaseFreightRate(selectedInvoice.accounting?.baseRateApplied || 45000);
+      setBaseFreightRate(selectedInvoice.accounting?.baseRateApplied ?? 0);
       setDriverAdvanceCash(selectedInvoice.accounting?.driverAdvanceCash || 0);
       setFuelVoucherAmount(selectedInvoice.accounting?.fuelVoucherAmount || 0);
       setTollAllowance(selectedInvoice.accounting?.tollAllowance || 0);
@@ -619,6 +619,18 @@ const BillingDashboard = () => {
                 <div>
                   <h3 className="text-2xl font-bold text-white">Generate Master Invoice</h3>
                   <p className="text-yellow-400 font-bold mt-1 text-xl">{selectedMonthlySupplier.supplierName}</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedMonthlySupplier.identifierType && (
+                      <span className="px-2 py-1 bg-purple-900/50 border border-purple-500/30 text-purple-300 text-[10px] uppercase font-bold rounded-md">
+                        {selectedMonthlySupplier.identifierType}
+                      </span>
+                    )}
+                    {selectedMonthlySupplier.supportedBillingCycles?.length > 0 && (
+                      <span className="px-2 py-1 bg-blue-900/50 border border-blue-500/30 text-blue-300 text-[10px] uppercase font-bold rounded-md">
+                        Cycles: {selectedMonthlySupplier.supportedBillingCycles.join(', ')}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button 
                   onClick={handleGenerateConsolidated}
@@ -707,6 +719,8 @@ const BillingDashboard = () => {
                   sgst={selectedConsolidated.financials.taxAmount / 2}
                   grandTotal={selectedConsolidated.financials.grandTotal}
                   isEditable={false}
+                  invoiceDate={new Date(selectedConsolidated.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
+                  invoicePeriod={new Date(selectedConsolidated.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 />
               </div>
 
@@ -897,7 +911,7 @@ const BillingDashboard = () => {
                       <label className="block text-[10px] text-gray-400 font-bold uppercase mb-1">Portal Reference Number</label>
                       <input 
                         type="text"
-                        placeholder="e.g. FLIPKART-TXN-90218"
+                        placeholder={`e.g. ${selectedBilledInvoice.supplierName?.toUpperCase()?.replace(/\s+/g, '-') || 'PORTAL'}-TXN-90218`}
                         value={selectedBilledInvoice.portalRefId}
                         onChange={e => setSelectedBilledInvoice({ ...selectedBilledInvoice, portalRefId: e.target.value })}
                         className="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white font-mono text-xs focus:border-pink-500 focus:outline-none"

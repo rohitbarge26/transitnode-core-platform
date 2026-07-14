@@ -1,33 +1,24 @@
 const mongoose = require('mongoose');
-const Tenant = require('./src/models/NoSQL/Tenant');
-require('dotenv').config();
 
 async function migrate() {
-  try {
-    if (!process.env.MONGODB_URI) {
-      console.error('Error: MONGODB_URI is not defined in the .env file!');
-      process.exit(1);
-    }
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB. Migrating URLs...');
-    
-    const tenants = await Tenant.find({});
-    let count = 0;
-    
-    for (const tenant of tenants) {
-      if (!tenant.fullLoginUrl) {
-        tenant.fullLoginUrl = `http://${tenant.customSubdomain}.localhost:3001/login`;
-        await tenant.save();
-        count++;
-      }
-    }
-    
-    console.log(`Successfully migrated ${count} tenants with their fullLoginUrl.`);
-  } catch (error) {
-    console.error('Migration failed:', error);
-  } finally {
-    process.exit();
-  }
+  await mongoose.connect('mongodb+srv://sarthaksavdekar:2Fv9kttmZ5F30Qo8@cluster0.s2xku84.mongodb.net/transitnode?retryWrites=true&w=majority&appName=Cluster0');
+  
+  const Tenant = mongoose.model('Tenant', new mongoose.Schema({}, { strict: false }));
+  const Company = mongoose.model('Company', new mongoose.Schema({}, { strict: false }));
+  
+  const tenantRes = await Tenant.updateMany(
+    { requireDriverMobileApp: { $exists: false } },
+    { $set: { requireDriverMobileApp: false } }
+  );
+  console.log('Tenants updated:', tenantRes.modifiedCount);
+
+  const companyRes = await Company.updateMany(
+    { requireDriverMobileApp: { $exists: false } },
+    { $set: { requireDriverMobileApp: false } }
+  );
+  console.log('Companies updated:', companyRes.modifiedCount);
+
+  process.exit(0);
 }
 
-migrate();
+migrate().catch(console.error);

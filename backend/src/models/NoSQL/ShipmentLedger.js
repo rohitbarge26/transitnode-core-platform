@@ -27,6 +27,7 @@ const shipmentLedgerSchema = new mongoose.Schema(
     },
     logistics: {
       sender: {
+        company: { type: String },
         name: { type: String },
         phone: { type: String },
         address: { type: String },
@@ -58,6 +59,7 @@ const shipmentLedgerSchema = new mongoose.Schema(
       },
       transport: {
         vehicleNumber: { type: String },
+        parentVehicleNumber: { type: String },
         vehicleType: { type: String },
         driverName: { type: String },
         driverPhone: { type: String },

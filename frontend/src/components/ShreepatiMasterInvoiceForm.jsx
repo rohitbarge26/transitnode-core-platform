@@ -19,10 +19,12 @@ const ShreepatiMasterInvoiceForm = ({
   masterInvoiceId,
   supplierName = "Parekh Integrated Services Pvt Ltd",
   baseRate,
-  grandTotal
+  grandTotal,
+  invoiceDate: propInvoiceDate,
+  invoicePeriod: propInvoicePeriod
 }) => {
-  const invoiceDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
-  const servicePeriod = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+  const invoiceDate = propInvoiceDate || new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+  const servicePeriod = propInvoicePeriod || new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '.');
   const totalInWords = numberToWords(Math.round(grandTotal || baseRate || 0));
 
   return (

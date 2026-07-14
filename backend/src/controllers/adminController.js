@@ -384,6 +384,19 @@ exports.getRates = async (req, res) => {
     }
 
     let rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId, supplierId: targetSupplierId });
+    
+    const isEmpty = (rc) => !rc || (!rc.rows?.TEMPLATE_A?.length && !rc.rows?.TEMPLATE_B?.length && !rc.rows?.TEMPLATE_C?.length);
+
+    if (isEmpty(rateCard) && targetCompanyId && targetSupplierId) {
+      rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: targetCompanyId, supplierId: null });
+    }
+    if (isEmpty(rateCard) && targetSupplierId) {
+      rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: null, supplierId: targetSupplierId });
+    }
+    if (isEmpty(rateCard)) {
+      rateCard = await RateCard.findOne({ type: 'GLOBAL', tenantId: req.user.tenantId, companyId: null, supplierId: null });
+    }
+
     if (!rateCard) {
       rateCard = new RateCard({
         type: 'GLOBAL',
@@ -777,6 +790,7 @@ exports.getSubscriptionDetails = async (req, res) => {
       stateCode: tenant.stateCode,
       contactNumber: (tenant.contactNumber && tenant.contactNumber.trim() !== '') ? tenant.contactNumber.trim() : tenant.registeredMobile,
       registeredMobile: tenant.registeredMobile,
+      requireDriverMobileApp: tenant.requireDriverMobileApp,
       brandingOptions: tenant.brandingOptions
     });
   } catch (error) {
@@ -855,11 +869,52 @@ exports.getDailyRunSheets = async (req, res) => {
   try {
     const DailyRunSheet = require('../models/NoSQL/DailyRunSheet');
     const tenantId = req.user.tenantId;
-    
-    const runSheets = await DailyRunSheet.find({ tenantId }).sort({ createdAt: -1 });
+    const runSheets = await DailyRunSheet.find({ tenantId }).sort({ date: -1, createdAt: -1 });
     res.status(200).json({ runSheets });
   } catch (error) {
     console.error('Error fetching Daily Run Sheets:', error);
     res.status(500).json({ message: 'Server error fetching Daily Run Sheets' });
+  }
+};
+
+exports.updateDailyRunSheet = async (req, res) => {
+  try {
+    const DailyRunSheet = require('../models/NoSQL/DailyRunSheet');
+    const { id } = req.params;
+    const tenantId = req.user.tenantId;
+
+    const runSheet = await DailyRunSheet.findOneAndUpdate(
+      { _id: id, tenantId },
+      req.body,
+      { new: true }
+    );
+
+    if (!runSheet) {
+      return res.status(404).json({ message: 'Daily Run Sheet not found' });
+    }
+
+    res.status(200).json({ message: 'Daily Run Sheet updated successfully', runSheet });
+  } catch (error) {
+    console.error('Error updating Daily Run Sheet:', error);
+    res.status(500).json({ message: 'Server error updating Daily Run Sheet' });
+  }
+};
+
+exports.deleteDailyRunSheet = async (req, res) => {
+  try {
+    const DailyRunSheet = require('../models/NoSQL/DailyRunSheet');
+    const { id } = req.params;
+    const tenantId = req.user.tenantId;
+
+    const runSheet = await DailyRunSheet.findOneAndDelete({ _id: id, tenantId });
+
+    if (!runSheet) {
+      return res.status(404).json({ message: 'Daily Run Sheet not found' });
+    }
+
+    res.status(200).json({ message: 'Daily Run Sheet deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting Daily Run Sheet:', error);
+    res.status(500).json({ message: 'Server error deleting Daily Run Sheet' });
   }
 };

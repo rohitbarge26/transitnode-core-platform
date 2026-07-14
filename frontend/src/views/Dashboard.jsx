@@ -10,8 +10,7 @@ import BankMatchingDashboard from './Accountant/BankMatchingDashboard';
 import OutstandingDashboard from './Accountant/OutstandingDashboard';
 import YardArrivals from './GateOperations/YardArrivals';
 import { Navigate } from 'react-router-dom';
-import FlipkartMisEntry from '../components/FlipkartMisEntry';
-import FlipkartMisAccountant from '../components/FlipkartMisAccountant';
+import DailyRunSheet from './Admin/DailyRunSheet';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -19,6 +18,10 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ activeShipments: 0, pendingInvoices: 0 });
   const [receptionistTab, setReceptionistTab] = useState('INTAKE');
   const [accountantTab, setAccountantTab] = useState('BILLING');
+  
+  // Data for Daily Run Sheet
+  const [workspaces, setWorkspaces] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -30,10 +33,26 @@ const Dashboard = () => {
       }
     };
     fetchStats();
+    
+    // Fetch dropdown data for Daily Run Sheet if Operator
+    if (user?.role === 'OPERATION' || user?.role === 'OPERATION_EXECUTIVE') {
+      const fetchDropdowns = async () => {
+        try {
+          const res1 = await axios.get('/api/companies/my-workspaces');
+          setWorkspaces(res1.data.workspaces || []);
+          const res2 = await axios.get('/api/admin/suppliers');
+          setSuppliers(res2.data || []);
+        } catch (err) {
+          console.error("Failed to fetch dropdowns:", err);
+        }
+      };
+      fetchDropdowns();
+    }
+
     // Poll for updates every 10 seconds
     const intervalId = setInterval(fetchStats, 10000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [user]);
 
   const renderRoleSpecificContent = () => {
     switch (user?.role) {
@@ -76,23 +95,23 @@ const Dashboard = () => {
                 Yard Arrivals & OTP
               </button>
               <button 
-                onClick={() => setReceptionistTab('FLIPKART_MIS')}
+                onClick={() => setReceptionistTab('RUN_SHEET')}
                 style={{
-                  background: receptionistTab === 'FLIPKART_MIS' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
-                  border: receptionistTab === 'FLIPKART_MIS' ? '1px solid #eab308' : '1px solid transparent',
-                  color: receptionistTab === 'FLIPKART_MIS' ? '#facc15' : 'var(--text-secondary)',
+                  background: receptionistTab === 'RUN_SHEET' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
+                  border: receptionistTab === 'RUN_SHEET' ? '1px solid #eab308' : '1px solid transparent',
+                  color: receptionistTab === 'RUN_SHEET' ? '#facc15' : 'var(--text-secondary)',
                   padding: '8px 16px',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontWeight: receptionistTab === 'FLIPKART_MIS' ? 'bold' : 'normal'
+                  fontWeight: receptionistTab === 'RUN_SHEET' ? 'bold' : 'normal'
                 }}
               >
-                Flipkart MIS
+                Daily Run Sheet
               </button>
             </div>
             {receptionistTab === 'INTAKE' && <IntakeDashboard />}
             {receptionistTab === 'YARD' && <YardArrivals />}
-            {receptionistTab === 'FLIPKART_MIS' && <FlipkartMisEntry />}
+            {receptionistTab === 'RUN_SHEET' && <DailyRunSheet workspaces={workspaces} suppliers={suppliers} isOperator={true} />}
           </div>
         );
       case 'ACCOUNTANT':
@@ -171,20 +190,7 @@ const Dashboard = () => {
                 Payroll & Salary Slips
               </button>
               */}
-              <button 
-                onClick={() => setAccountantTab('FLIPKART_MIS')}
-                style={{
-                  background: accountantTab === 'FLIPKART_MIS' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
-                  border: accountantTab === 'FLIPKART_MIS' ? '1px solid #eab308' : '1px solid transparent',
-                  color: accountantTab === 'FLIPKART_MIS' ? '#facc15' : 'var(--text-secondary)',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: accountantTab === 'FLIPKART_MIS' ? 'bold' : 'normal'
-                }}
-              >
-                Flipkart MIS
-              </button>
+              {/* Flipkart MIS removed */}
             </div>
             {accountantTab === 'BILLING' && <BillingDashboard />}
             {accountantTab === 'BOOKKEEPING' && <BookkeepingDashboard />}
@@ -193,7 +199,6 @@ const Dashboard = () => {
             {/* Commented out Payroll & Salary Slips as requested
             {accountantTab === 'PAYROLL' && <AccountantPayroll />}
             */}
-            {accountantTab === 'FLIPKART_MIS' && <FlipkartMisAccountant />}
           </div>
         );
       default:
