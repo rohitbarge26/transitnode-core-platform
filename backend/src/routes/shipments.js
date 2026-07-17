@@ -32,6 +32,9 @@ router.get('/check-admin', shipController.checkAdmin);
 // POST /api/shipments/create (requires Operation Executive/Admin)
 router.post('/create', verifyToken, checkRole(['OPERATION_EXECUTIVE', 'ADMIN', 'OPERATION']), shipController.createShipment);
 
+// PUT /api/shipments/:trackingId (requires Operation Executive/Admin)
+router.put('/:trackingId', verifyToken, checkRole(['OPERATION_EXECUTIVE', 'ADMIN', 'OPERATION']), shipController.updateShipment);
+
 // GET /api/shipments
 router.get('/', verifyToken, shipController.listShipments);
 

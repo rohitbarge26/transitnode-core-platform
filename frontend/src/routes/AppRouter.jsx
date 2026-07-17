@@ -15,6 +15,8 @@ const SaaSCheckout = React.lazy(() => import('../views/Checkout/SaaSCheckout'));
 const AdminSetup = React.lazy(() => import('../views/Checkout/AdminSetup'));
 const MasterAdminDashboard = React.lazy(() => import('../views/MasterAdmin/MasterAdminDashboard'));
 import YardArrivals from '../views/GateOperations/YardArrivals';
+const PrivacyPolicy = React.lazy(() => import('../views/Legal/PrivacyPolicy'));
+const TermsOfService = React.lazy(() => import('../views/Legal/TermsOfService'));
 
 if (process.env.REACT_APP_API_URL) {
   axios.defaults.baseURL = process.env.REACT_APP_API_URL;
@@ -129,6 +131,8 @@ const AppRouter = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/magic-login/:token" element={<MagicLogin />} />
         <Route path="/tracker/:trackingId" element={<PublicTracker />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
         
         {/* Protected Routes */}
         <Route path="/checkout" element={

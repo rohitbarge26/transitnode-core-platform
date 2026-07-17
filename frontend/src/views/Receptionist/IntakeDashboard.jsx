@@ -16,12 +16,19 @@ const IntakeDashboard = () => {
   const [activeRateCard, setActiveRateCard] = useState(null);
   const [runSheets, setRunSheets] = useState([]);
 
-  const [formData, setFormData] = useState({
+  const [manifestFilter, setManifestFilter] = useState('day');
+  const [customStartDate, setCustomStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const [editingTrackingId, setEditingTrackingId] = useState(null);
+  const [viewModeTrackingId, setViewModeTrackingId] = useState(null);
+
+  const initialFormState = {
     senderCompany: '', senderName: '', senderPhone: '',
     senderAddress: '', senderGstin: '', senderPostalCode: '', senderDropOff: false,
     receiverName: '', receiverPhone: '',
     receiverAddress: '', receiverGstin: '', receiverPostalCode: '', receiverSelfCollect: false, receiverClientCode: '',
-    vehicleNumber: '', parentVehicleNumber: '', vehicleType: '14-Ft Container',
+    vehicleNumber: '', parentVehicleNumber: '', vehicleType: '14-Ft Container', vehicleRateType: 'Regular',
     driverName: '', driverPhone: '',
     origin: '', destination: '',
     commodityType: '',
@@ -29,7 +36,8 @@ const IntakeDashboard = () => {
     dimensions: '', packingType: 'BOX', fragile: false,
     invoiceNo: '', invoiceDate: new Date().toISOString().split('T')[0], invoiceValue: '', ewayBillNo: '',
     riskCoverage: 'OWNERS'
-  });
+  };
+  const [formData, setFormData] = useState(initialFormState);
 
   const [selectedShipment, setSelectedShipment] = useState(null);
   const [exceptionForm, setExceptionForm] = useState({ issueType: 'BREAKDOWN', description: '' });
@@ -39,6 +47,7 @@ const IntakeDashboard = () => {
   const selectedSupplierObj = suppliers.find(s => s.supplierName === formData.receiverName);
   const dynamicIdentifierLabel = selectedSupplierObj?.identifierType || 'Client / Store Code';
   const isIdentifierRequired = selectedSupplierObj ? !!selectedSupplierObj.identifierType : false;
+  const isMonthlyInvoiceSupplier = selectedSupplierObj?.supportedBillingCycles?.includes('MONTHLY');
 
   const selectedCompanyObj = workspaces.find(w => w.companyName === formData.senderCompany);
   const requireDriverApp = selectedCompanyObj?.requireDriverMobileApp || false;
@@ -52,7 +61,7 @@ const IntakeDashboard = () => {
     fetchRunSheets();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [manifestFilter, customStartDate, customEndDate]);
 
   useEffect(() => {
     const fetchRateCard = async () => {
@@ -197,7 +206,11 @@ const IntakeDashboard = () => {
 
   const fetchRecentShipments = async () => {
     try {
-      const response = await axios.get('/api/shipments');
+      let url = `/api/shipments?timeRange=${manifestFilter}`;
+      if (manifestFilter === 'custom') {
+        url += `&startDate=${customStartDate}&endDate=${customEndDate}`;
+      }
+      const response = await axios.get(url);
       setRecentShipments(response.data.shipments || []);
     } catch (err) {
       console.error("Error fetching shipments", err);
@@ -225,6 +238,62 @@ const IntakeDashboard = () => {
     } catch (err) {
       console.error("Error fetching fleet", err);
     }
+  };
+
+  const populateForm = (ship) => {
+    setFormData({
+      senderCompany: ship.logistics?.sender?.company || '',
+      senderName: ship.logistics?.sender?.name || '',
+      senderPhone: ship.logistics?.sender?.phone || '',
+      senderAddress: ship.logistics?.sender?.address || '',
+      senderGstin: ship.logistics?.sender?.gstin || '',
+      senderPostalCode: ship.logistics?.sender?.postalCode || '',
+      senderDropOff: ship.logistics?.sender?.dropOff || false,
+      receiverName: ship.logistics?.receiver?.name || '',
+      receiverPhone: ship.logistics?.receiver?.phone || '',
+      receiverAddress: ship.logistics?.receiver?.address || '',
+      receiverGstin: ship.logistics?.receiver?.gstin || '',
+      receiverPostalCode: ship.logistics?.receiver?.postalCode || '',
+      receiverSelfCollect: ship.logistics?.receiver?.selfCollect || false,
+      receiverClientCode: ship.logistics?.receiver?.clientCode || '',
+      vehicleNumber: ship.logistics?.transport?.vehicleNumber || '',
+      vehicleType: ship.logistics?.transport?.vehicleType || '14-Ft Container',
+      vehicleRateType: ship.logistics?.transport?.vehicleRateType || 'Regular',
+      driverName: ship.logistics?.transport?.driverName || '',
+      driverPhone: ship.logistics?.transport?.driverPhone || '',
+      origin: ship.logistics?.transport?.origin || '',
+      destination: ship.logistics?.transport?.destination || '',
+      commodityType: ship.logistics?.transport?.commodityType || '',
+      actualWeight: ship.logistics?.package?.actualWeight || '',
+      chargedWeight: ship.logistics?.package?.chargedWeight || '',
+      packingType: ship.logistics?.package?.packingType || 'BOX',
+      fragile: ship.logistics?.package?.fragile || false,
+      invoiceNo: ship.logistics?.package?.invoiceNo || '',
+      invoiceDate: ship.logistics?.package?.invoiceDate ? new Date(ship.logistics.package.invoiceDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      invoiceValue: ship.logistics?.package?.invoiceValue || '',
+      ewayBillNo: ship.logistics?.package?.ewayBillNo || '',
+      riskCoverage: ship.logistics?.package?.riskCoverage || 'OWNERS'
+    });
+  };
+
+  const handleEditShipment = (ship) => {
+    setEditingTrackingId(ship.trackingNumber);
+    setViewModeTrackingId(null);
+    populateForm(ship);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewShipment = (ship) => {
+    setViewModeTrackingId(ship.trackingNumber);
+    setEditingTrackingId(null);
+    populateForm(ship);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEditOrView = () => {
+    setEditingTrackingId(null);
+    setViewModeTrackingId(null);
+    setFormData(initialFormState);
   };
 
   const fetchSuppliers = async () => {
@@ -309,7 +378,8 @@ const IntakeDashboard = () => {
         vehicleNumber: selectedVehicleReg,
         vehicleType: selectedVehicle.vehicleType || '14-Ft Container',
         driverName: assignedDriver ? assignedDriver.name : (selectedVehicle.driverName || ''),
-        driverPhone: assignedDriver ? assignedDriver.phone : (selectedVehicle.driverPhone || '')
+        driverPhone: assignedDriver ? assignedDriver.phone : (selectedVehicle.driverPhone || ''),
+        vehicleRateType: selectedVehicle.ownershipType || 'Regular'
       });
     }
   };
@@ -431,6 +501,7 @@ const IntakeDashboard = () => {
           if (matchingRunSheet) {
             extraUpdates.vehicleNumber = matchingRunSheet.vehicleNumber || '';
             extraUpdates.vehicleType = matchingRunSheet.vehicleType || '';
+            extraUpdates.vehicleRateType = matchingRunSheet.vehicleOwnershipType || 'Regular';
           }
         }
       }
@@ -474,7 +545,6 @@ const IntakeDashboard = () => {
           }
         } else if (selectedSupplierObj.identifierType === 'Hub Name') {
           if (runSheets && runSheets.length > 0) {
-            // Find the active run sheet for this Hub Name
             const match = runSheets.find(rs => rs.sourceHubName?.toUpperCase() === formData.receiverClientCode?.toUpperCase());
             if (match) {
               calculatedBaseRate = Number(match.freight) || Number(match.totalAmt) || 0;
@@ -484,32 +554,44 @@ const IntakeDashboard = () => {
       }
 
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/shipments/create', { ...formData, isMonthlyInvoice, baseRateApplied: calculatedBaseRate }, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'x-workspace-id': workspaceId
+      const payload = { 
+        ...formData, 
+        senderCompanyAddress: selectedCompanyObj?.address || formData.senderAddress,
+        isMonthlyInvoice, 
+        baseRateApplied: calculatedBaseRate 
+      };
+
+      let response;
+      if (editingTrackingId) {
+        response = await axios.put(`/api/shipments/${editingTrackingId}`, payload, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'x-workspace-id': workspaceId
+          }
+        });
+        if (isMonthlyInvoice) {
+          alert('Manifest Updated Successfully! (No LR required for Monthly Invoice trips)');
+        } else {
+          alert('Manifest Updated Successfully!');
         }
-      });
-      
-      if (isMonthlyInvoice) {
-        alert('Shipment Created Successfully! (No LR required for Monthly Invoice trips)');
       } else {
-        setGeneratedShipment(response.data.shipment);
+        response = await axios.post('/api/shipments/create', payload, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'x-workspace-id': workspaceId
+          }
+        });
+        
+        if (isMonthlyInvoice) {
+          alert('Shipment Created Successfully! (No LR required for Monthly Invoice trips)');
+        } else {
+          setGeneratedShipment(response.data.shipment);
+        }
       }
-      setFormData({
-        senderName: '', senderPhone: '',
-        senderAddress: '', senderGstin: '', senderPostalCode: '', senderDropOff: false,
-        receiverName: '', receiverPhone: '',
-        receiverAddress: '', receiverGstin: '', receiverPostalCode: '', receiverSelfCollect: false, receiverClientCode: '',
-        vehicleNumber: '', vehicleType: '14-Ft Container',
-        driverName: '', driverPhone: '',
-        origin: '', destination: '',
-        commodityType: '',
-        actualWeight: '', chargedWeight: '',
-        dimensions: '', packingType: 'BOX', fragile: false,
-        invoiceNo: '', invoiceDate: new Date().toISOString().split('T')[0], invoiceValue: '', ewayBillNo: '',
-        riskCoverage: 'OWNERS'
-      });
+      
+      setFormData(initialFormState);
+      setEditingTrackingId(null);
+      setViewModeTrackingId(null);
       fetchRecentShipments();
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to create shipment');
@@ -567,6 +649,7 @@ const IntakeDashboard = () => {
             )}
             
             <form onSubmit={handleSubmit} className="space-y-8">
+              <fieldset disabled={!!viewModeTrackingId} className="space-y-8 border-0 p-0 m-0">
               
               <div className="mb-6 relative">
                 <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-cyan-400">Company Name</label>
@@ -676,10 +759,19 @@ const IntakeDashboard = () => {
                       <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[8px] font-bold text-purple-400">
                         {dynamicIdentifierLabel} {isIdentifierRequired && <span className="text-red-500">*</span>}
                       </label>
-                      <input type="text" name="receiverClientCode" value={formData.receiverClientCode} onChange={handleChange} 
-                        required={isIdentifierRequired}
+                      <input type="text" name="receiverClientCode" list="client-identifier-options" value={formData.receiverClientCode} onChange={handleChange} 
+                        required={isIdentifierRequired} autoComplete="off"
                         className={inputClasses('receiverClientCode')} onFocus={() => setFocusedField('receiverClientCode')} onBlur={() => setFocusedField(null)} 
                         placeholder={isIdentifierRequired ? `Compulsory for ${selectedSupplierObj?.supplierName}` : "Optional"} />
+                      
+                      <datalist id="client-identifier-options">
+                        {selectedSupplierObj?.identifierType === 'Store Code' && (activeRateCard?.rows?.TEMPLATE_B || []).map((r, i) => (
+                          <option key={i} value={r.storeCode}>{r.storeName ? `(${r.storeName})` : ''}</option>
+                        ))}
+                        {selectedSupplierObj?.identifierType === 'Hub Name' && Array.from(new Set((runSheets || []).map(rs => rs.sourceHubName))).filter(Boolean).map((hub, i) => (
+                          <option key={i} value={hub} />
+                        ))}
+                      </datalist>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">
@@ -745,6 +837,19 @@ const IntakeDashboard = () => {
                           </select>
                         )}
                       </div>
+                      {isMonthlyInvoiceSupplier && (
+                        <div className="relative">
+                          <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Rate Type</label>
+                          <input 
+                            type="text"
+                            name="vehicleRateType" 
+                            value={formData.vehicleRateType || 'Regular'} 
+                            readOnly
+                            className={`${inputClasses('vehicleRateType')} bg-[#111827] opacity-80 cursor-not-allowed`} 
+                            placeholder="Auto-filled"
+                          />
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -784,6 +889,19 @@ const IntakeDashboard = () => {
                           ))}
                         </select>
                       </div>
+                      {isMonthlyInvoiceSupplier && (
+                        <div className="relative">
+                          <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-cyan-400">Vehicle Rate Type</label>
+                          <input 
+                            type="text"
+                            name="vehicleRateType" 
+                            value={formData.vehicleRateType || 'Regular'} 
+                            readOnly
+                            className={`${inputClasses('vehicleRateType')} bg-[#111827] opacity-80 cursor-not-allowed`} 
+                            placeholder="Auto-filled"
+                          />
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -842,102 +960,120 @@ const IntakeDashboard = () => {
                   </div>
                 </div>
 
-                <div className="relative">
-                  <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Type of Goods / Cargo Description (Said to Contain)</label>
-                  <textarea name="commodityType" value={formData.commodityType} onChange={handleChange} required rows="2"
-                    className={inputClasses('commodityType')} onFocus={() => setFocusedField('commodityType')} onBlur={() => setFocusedField(null)} placeholder="e.g. 50 Boxes of Electronics"></textarea>
-                </div>
-
-              </div>
-
-              {/* Cargo & Invoices Specifications Block */}
-              <div className="bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300 space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-1.5 bg-pink-500 bg-opacity-20 rounded-md text-pink-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Weight & Invoices</h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {!isMonthlyInvoiceSupplier && (
                   <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Actual Wt. (kg)</label>
-                    <input type="number" name="actualWeight" value={formData.actualWeight} onChange={handleChange} required 
-                      className={inputClasses('actualWeight')} onFocus={() => setFocusedField('actualWeight')} onBlur={() => setFocusedField(null)} />
+                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Type of Goods / Cargo Description (Said to Contain)</label>
+                    <textarea name="commodityType" value={formData.commodityType} onChange={handleChange} required rows="2"
+                      className={inputClasses('commodityType')} onFocus={() => setFocusedField('commodityType')} onBlur={() => setFocusedField(null)} placeholder="e.g. 50 Boxes of Electronics"></textarea>
                   </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Charged Wt. (kg)</label>
-                    <input type="number" name="chargedWeight" value={formData.chargedWeight} onChange={handleChange} required 
-                      className={inputClasses('chargedWeight')} onFocus={() => setFocusedField('chargedWeight')} onBlur={() => setFocusedField(null)} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Packing Type</label>
-                    <select name="packingType" value={formData.packingType} onChange={handleChange} required 
-                      className={inputClasses('packingType')} onFocus={() => setFocusedField('packingType')} onBlur={() => setFocusedField(null)}>
-                      <option value="BOX">BOX</option>
-                      <option value="CARTON">CARTON</option>
-                      <option value="PALLET">PALLET</option>
-                      <option value="BAG">BAG</option>
-                      <option value="CRATE">CRATE</option>
-                      <option value="LOOSE">LOOSE</option>
-                    </select>
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Risk Coverage</label>
-                    <select name="riskCoverage" value={formData.riskCoverage} onChange={handleChange} required 
-                      className={inputClasses('riskCoverage')} onFocus={() => setFocusedField('riskCoverage')} onBlur={() => setFocusedField(null)}>
-                      <option value="OWNERS">Owner's Risk</option>
-                      <option value="CARRIERS">Carrier's Risk</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-2 pt-2">
-                    <input type="checkbox" id="fragile" name="fragile" checked={formData.fragile} onChange={handleChange} className="w-4 h-4 accent-pink-400 cursor-pointer" />
-                    <label htmlFor="fragile" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Fragile Cargo</label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2 border-t border-gray-700/30">
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice No.</label>
-                    <input type="text" name="invoiceNo" value="(Auto-generated)" disabled 
-                      className={`${inputClasses('invoiceNo')} opacity-60 cursor-not-allowed`} />
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice Date</label>
-                    <input type="date" name="invoiceDate" value={formData.invoiceDate || new Date().toISOString().split('T')[0]} disabled 
-                      className={`${inputClasses('invoiceDate')} opacity-60 cursor-not-allowed`} />
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice Value (INR)</label>
-                    <input type="number" name="invoiceValue" value={formData.invoiceValue} onChange={handleChange} required 
-                      className={inputClasses('invoiceValue')} onFocus={() => setFocusedField('invoiceValue')} onBlur={() => setFocusedField(null)} />
-                  </div>
-                  <div className="relative">
-                    <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">E-way Bill No.</label>
-                    <input type="text" name="ewayBillNo" value={formData.ewayBillNo} onChange={handleChange} required 
-                      className={inputClasses('ewayBillNo')} onFocus={() => setFocusedField('ewayBillNo')} onBlur={() => setFocusedField(null)} />
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} 
-                className={`group relative w-full flex justify-center py-4 px-4 border border-transparent text-lg font-black rounded-xl text-white transition-all duration-300 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-900 ${loading ? 'bg-gray-600 cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(34,211,238,0.4)]'}`}>
-                {loading ? (
-                  <span className="flex items-center gap-3">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    Processing Transmission...
-                  </span>
-                ) : (
-                  <span className="relative z-10 flex items-center gap-2">
-                    Launch Intake & Generate Manifest
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                  </span>
                 )}
-              </button>
 
+              </div>
+
+              {!isMonthlyInvoiceSupplier && (
+                <div className="bg-gray-800 bg-opacity-30 p-3 sm:p-4 md:p-6 rounded-xl border border-gray-700/50 hover:bg-opacity-50 transition-all duration-300 space-y-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-1.5 bg-pink-500 bg-opacity-20 rounded-md text-pink-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Weight & Invoices</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Actual Wt. (kg)</label>
+                      <input type="number" name="actualWeight" value={formData.actualWeight} onChange={handleChange} required 
+                        className={inputClasses('actualWeight')} onFocus={() => setFocusedField('actualWeight')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Charged Wt. (kg)</label>
+                      <input type="number" name="chargedWeight" value={formData.chargedWeight} onChange={handleChange} required 
+                        className={inputClasses('chargedWeight')} onFocus={() => setFocusedField('chargedWeight')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Packing Type</label>
+                      <select name="packingType" value={formData.packingType} onChange={handleChange} required 
+                        className={inputClasses('packingType')} onFocus={() => setFocusedField('packingType')} onBlur={() => setFocusedField(null)}>
+                        <option value="BOX">BOX</option>
+                        <option value="CARTON">CARTON</option>
+                        <option value="PALLET">PALLET</option>
+                        <option value="BAG">BAG</option>
+                        <option value="CRATE">CRATE</option>
+                        <option value="LOOSE">LOOSE</option>
+                      </select>
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-xs font-bold text-pink-400">Risk Coverage</label>
+                      <select name="riskCoverage" value={formData.riskCoverage} onChange={handleChange} required 
+                        className={inputClasses('riskCoverage')} onFocus={() => setFocusedField('riskCoverage')} onBlur={() => setFocusedField(null)}>
+                        <option value="OWNERS">Owner's Risk</option>
+                        <option value="CARRIERS">Carrier's Risk</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 pt-2">
+                      <input type="checkbox" id="fragile" name="fragile" checked={formData.fragile} onChange={handleChange} className="w-4 h-4 accent-pink-400 cursor-pointer" />
+                      <label htmlFor="fragile" className="text-xs text-gray-300 font-bold select-none cursor-pointer">Fragile Cargo</label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2 border-t border-gray-700/30">
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice No.</label>
+                      <input type="text" name="invoiceNo" value="(Auto-generated)" disabled 
+                        className={`${inputClasses('invoiceNo')} opacity-60 cursor-not-allowed`} />
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice Date</label>
+                      <input type="date" name="invoiceDate" value={formData.invoiceDate || new Date().toISOString().split('T')[0]} disabled 
+                        className={`${inputClasses('invoiceDate')} opacity-60 cursor-not-allowed`} />
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">Invoice Value (INR)</label>
+                      <input type="number" name="invoiceValue" value={formData.invoiceValue} onChange={handleChange} required 
+                        className={inputClasses('invoiceValue')} onFocus={() => setFocusedField('invoiceValue')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                    <div className="relative">
+                      <label className="absolute -top-3 left-4 bg-[#111827] px-2 text-[10px] font-bold text-pink-400">E-way Bill No.</label>
+                      <input type="text" name="ewayBillNo" value={formData.ewayBillNo} onChange={handleChange} required 
+                        className={inputClasses('ewayBillNo')} onFocus={() => setFocusedField('ewayBillNo')} onBlur={() => setFocusedField(null)} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              </fieldset>
+
+              <div className="flex gap-4 pt-4">
+                {viewModeTrackingId ? (
+                  <button type="button" onClick={cancelEditOrView} className="w-full flex justify-center py-4 px-4 border border-transparent text-lg font-black rounded-xl text-white bg-gray-600 hover:bg-gray-500 transition-all duration-300">
+                    Close View
+                  </button>
+                ) : (
+                  <>
+                    <button type="submit" disabled={loading} 
+                      className={`group relative flex-1 flex justify-center py-4 px-4 border border-transparent text-lg font-black rounded-xl text-white transition-all duration-300 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 focus:ring-offset-gray-900 ${loading ? 'bg-gray-600 cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(34,211,238,0.4)]'}`}>
+                      {loading ? (
+                        <span className="flex items-center gap-3">
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                          Processing...
+                        </span>
+                      ) : (
+                        <span className="relative z-10 flex items-center gap-2">
+                          {editingTrackingId ? 'Update Manifest' : 'Launch Intake & Generate Manifest'}
+                          {!editingTrackingId && <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+                        </span>
+                      )}
+                    </button>
+                    {editingTrackingId && (
+                      <button type="button" onClick={cancelEditOrView} className="px-6 py-4 border border-gray-600 text-gray-300 text-lg font-black rounded-xl hover:bg-gray-800 transition-all">
+                        Cancel
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </form>
           </div>
         </div>
@@ -945,22 +1081,35 @@ const IntakeDashboard = () => {
         {/* Dynamic Sidebar */}
         <div className="flex flex-col max-h-[850px]">
           <div className="bg-[#111827] border border-gray-700 p-3 sm:p-4 md:p-6 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                  Active Manifests
-                </h2>
-                <span className="bg-gray-800 text-[10px] font-bold text-cyan-400 px-3 py-1 rounded-full mt-1 inline-block">{recentShipments.length} logged</span>
+            <div className="mb-6 pb-4 border-b border-gray-800 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                    Active Manifests
+                  </h2>
+                  <span className="bg-gray-800 text-[10px] font-bold text-cyan-400 px-3 py-1 rounded-full mt-1 inline-block">{recentShipments.length} logged</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={manifestFilter} 
+                    onChange={(e) => setManifestFilter(e.target.value)}
+                    className="bg-[#0B0E14] border border-gray-700 text-xs text-white rounded-lg px-2 py-1.5 focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="day">Day</option>
+                    <option value="month">Month</option>
+                    <option value="year">Year</option>
+                  </select>
+                  {recentShipments.length > 0 && (
+                    <button 
+                      onClick={handleExportCSV}
+                      className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                    >
+                      Export
+                    </button>
+                  )}
+                </div>
               </div>
-              {recentShipments.length > 0 && (
-                <button 
-                  onClick={handleExportCSV}
-                  className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold px-3 py-2 rounded-xl transition"
-                >
-                  Export CSV
-                </button>
-              )}
             </div>
             
             <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
@@ -1016,6 +1165,18 @@ const IntakeDashboard = () => {
 
                       {isSelected && (
                         <div className="mt-4 pt-4 border-t border-gray-700 space-y-4" onClick={(e) => e.stopPropagation()}>
+                          
+                          {manifestFilter === 'day' && (
+                            <div className="flex items-center gap-2 mb-3 bg-gray-900/40 p-2 rounded-lg border border-gray-800">
+                              <button type="button" onClick={() => handleEditShipment(ship)} className="flex-1 bg-cyan-900/40 text-cyan-400 text-[10px] uppercase tracking-widest font-bold px-3 py-2 rounded border border-cyan-800 hover:bg-cyan-800 transition">
+                                Edit Manifest
+                              </button>
+                              <button type="button" onClick={() => handleViewShipment(ship)} className="flex-1 bg-gray-700/50 text-gray-300 text-[10px] uppercase tracking-widest font-bold px-3 py-2 rounded border border-gray-600 hover:bg-gray-600 transition">
+                                View Details
+                              </button>
+                            </div>
+                          )}
+
                           {/* Lorry Receipt Digital Generation */}
                           <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-800">
                             <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-2">Lorry Receipt (LR) POD</h4>
@@ -1128,10 +1289,10 @@ const IntakeDashboard = () => {
       </div>
 
       {generatedShipment && (
-        <LorryReceiptModal shipment={generatedShipment} onClose={() => setGeneratedShipment(null)} />
+        <LorryReceiptModal shipment={generatedShipment} onClose={() => setGeneratedShipment(null)} workspaces={workspaces} />
       )}
       {viewingLrShipment && (
-        <LorryReceiptModal shipment={viewingLrShipment} onClose={() => setViewingLrShipment(null)} />
+        <LorryReceiptModal shipment={viewingLrShipment} onClose={() => setViewingLrShipment(null)} workspaces={workspaces} />
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import Barcode from 'react-barcode';
 
-const LorryReceiptModal = ({ shipment, onClose }) => {
+const LorryReceiptModal = ({ shipment, onClose, workspaces = [] }) => {
   if (!shipment) return null;
 
   const {
@@ -48,11 +48,14 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
     const shortSerialNumber = trackingNumber.split('-').pop() || '4113';
     const chequeNeftNo = hasFinanceData ? (accounting?.chequeNeftNo || `TXN-${shortSerialNumber}`) : "";
 
-    const senderName = logistics?.sender?.name || 'Sarthak Enterprises';
+    const senderName = logistics?.sender?.company || logistics?.sender?.name || 'Sarthak Enterprises';
     const initials = senderName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const nameParts = senderName.split(' ');
     const firstName = nameParts[0] || 'SARTHAK';
     const lastName = nameParts.slice(1).join(' ') || 'ENTERPRISES';
+
+    const companyObj = workspaces?.find(w => w.companyName === logistics?.sender?.company);
+    const finalCompanyAddress = logistics?.sender?.companyAddress || companyObj?.address || logistics?.sender?.address || 'V1032, Krushi Wholesale Mart, Opp. Akshar Complex, Sector 19, Vashi, Navi Mumbai - 400703.';
 
     return (
       <div className="w-full bg-white text-black p-4 font-sans text-[11px] leading-tight border border-gray-400 print:border-none print:p-0">
@@ -67,14 +70,14 @@ const LorryReceiptModal = ({ shipment, onClose }) => {
               {initials}
             </div>
             <div>
-              <h1 className="text-sm font-black tracking-tight leading-none uppercase">{firstName}</h1>
+              <div className="text-sm font-black tracking-tight leading-none uppercase text-black">{firstName}</div>
               <p className="text-[10px] font-bold tracking-widest text-gray-700 uppercase leading-none mt-0.5">{lastName}</p>
             </div>
           </div>
           
           {/* Address & Contacts */}
           <div className="col-span-4 border-b border-r border-black p-2 text-[9px] leading-tight">
-            <p className="font-bold">{logistics?.sender?.address || 'V1032, Krushi Wholesale Mart, Opp. Akshar Complex, Sector 19, Vashi, Navi Mumbai - 400703.'}</p>
+            <p className="font-bold">{finalCompanyAddress}</p>
             <p>Mob.: +91 {logistics?.sender?.phone || '9867416154'}</p>
             {senderName.toLowerCase().includes('sarthak') ? (
               <p>Email: suhas.bhoite123@gmail.com</p>

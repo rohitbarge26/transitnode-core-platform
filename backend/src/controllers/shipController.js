@@ -135,6 +135,7 @@ exports.createShipment = async (req, res) => {
       logistics: {
         sender: { 
           company: senderCompany,
+          companyAddress: req.body.senderCompanyAddress,
           name: senderName, 
           phone: senderPhone,
           address: senderAddress,
@@ -201,16 +202,126 @@ exports.createShipment = async (req, res) => {
   }
 };
 
+
+exports.updateShipment = async (req, res) => {
+  try {
+    const { trackingId } = req.params;
+    
+    // Check if shipment exists
+    const shipment = await ShipmentLedger.findOne({ trackingNumber: trackingId, tenantId: req.user.tenantId });
+    if (!shipment) {
+      return res.status(404).json({ message: 'Shipment not found' });
+    }
+
+    const { 
+      senderCompany, senderName, senderPhone, senderAddress, senderGstin, senderPostalCode, senderDropOff,
+      receiverName, receiverPhone, receiverAddress, receiverGstin, receiverPostalCode, receiverSelfCollect, receiverClientCode,
+      weight_kg, dimensions, actualWeight, chargedWeight, packingType, fragile, invoiceValue, ewayBillNo, riskCoverage,
+      vehicleNumber, parentVehicleNumber, vehicleType, driverName, driverPhone, origin, destination, commodityType
+    } = req.body;
+
+    const baseRateApplied = Number(req.body.baseRateApplied) || shipment.accounting?.baseRateApplied || 0;
+    
+    // Geocode if destination changed
+    let destinationCoords = shipment.logistics?.transport?.destinationCoords;
+    let lat = shipment.destinationLat;
+    let lng = shipment.destinationLng;
+    
+    if (receiverAddress !== shipment.logistics?.receiver?.address || destination !== shipment.logistics?.transport?.destination) {
+      destinationCoords = await geocodeAddress(receiverAddress || destination);
+      if (destinationCoords && destinationCoords.includes(',')) {
+        const [latStr, lngStr] = destinationCoords.split(',');
+        lat = parseFloat(latStr) || 19.0760;
+        lng = parseFloat(lngStr) || 72.8777;
+      }
+    }
+
+    shipment.destinationLat = lat;
+    shipment.destinationLng = lng;
+
+    shipment.logistics = {
+      sender: { 
+        company: senderCompany,
+        companyAddress: req.body.senderCompanyAddress || shipment.logistics?.sender?.companyAddress,
+        name: senderName, 
+        phone: senderPhone,
+        address: senderAddress,
+        gstin: senderGstin,
+        postalCode: senderPostalCode,
+        dropOff: senderDropOff === 'true' || senderDropOff === true
+      },
+      receiver: { 
+        name: receiverName, 
+        phone: receiverPhone,
+        address: receiverAddress,
+        gstin: receiverGstin,
+        postalCode: receiverPostalCode,
+        selfCollect: receiverSelfCollect === 'true' || receiverSelfCollect === true,
+        clientCode: receiverClientCode
+      },
+      package: { 
+        weight_kg: Number(weight_kg) || Number(actualWeight) || 0, 
+        dimensions,
+        actualWeight: Number(actualWeight) || Number(weight_kg) || 0,
+        chargedWeight: Number(chargedWeight) || Number(weight_kg) || 0,
+        packingType,
+        fragile: fragile === 'true' || fragile === true,
+        invoiceNo: shipment.logistics?.package?.invoiceNo || trackingId,
+        invoiceDate: shipment.logistics?.package?.invoiceDate || new Date(),
+        invoiceValue: Number(invoiceValue) || 0,
+        ewayBillNo,
+        riskCoverage: riskCoverage || 'OWNERS'
+      },
+      transport: {
+        vehicleNumber: vehicleNumber ? vehicleNumber.toUpperCase() : undefined,
+        parentVehicleNumber,
+        vehicleType,
+        driverName,
+        driverPhone,
+        origin,
+        destination,
+        destinationCoords,
+        commodityType
+      }
+    };
+    
+    if (!shipment.accounting) {
+      shipment.accounting = {};
+    }
+    shipment.accounting.billingCycle = req.body.isMonthlyInvoice ? 'MONTHLY' : 'DAILY';
+    shipment.accounting.baseRateApplied = baseRateApplied;
+    shipment.accounting.subtotal = baseRateApplied;
+    
+    if (req.body.isMonthlyInvoice) {
+      shipment.lrCopyUrl = 'MONTHLY_INVOICE';
+    } else if (shipment.lrCopyUrl === 'MONTHLY_INVOICE') {
+      shipment.lrCopyUrl = 'ONLINE'; // Revert if no longer monthly
+    }
+
+    await shipment.save();
+
+    res.status(200).json({ message: 'Shipment updated successfully', shipment });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error updating shipment' });
+  }
+};
+
 exports.listShipments = async (req, res) => {
   try {
     const { timeRange, billingCycle } = req.query;
     let query = {};
     const now = new Date();
 
-    if (timeRange && timeRange !== 'all') {
+    if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
+      query['metadata.createdAt'] = {
+        $gte: new Date(req.query.startDate),
+        $lte: new Date(req.query.endDate + 'T23:59:59.999Z') // include full end day
+      };
+    } else if (timeRange && timeRange !== 'all') {
       let startDate = new Date();
       if (timeRange === 'day') {
-        startDate.setDate(now.getDate() - 1);
+        startDate.setHours(0, 0, 0, 0); // Today from midnight
       } else if (timeRange === 'week') {
         startDate.setDate(now.getDate() - 7);
       } else if (timeRange === 'month') {

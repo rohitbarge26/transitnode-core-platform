@@ -28,6 +28,7 @@ const shipmentLedgerSchema = new mongoose.Schema(
     logistics: {
       sender: {
         company: { type: String },
+        companyAddress: { type: String },
         name: { type: String },
         phone: { type: String },
         address: { type: String },

@@ -78,7 +78,38 @@ const AdminDashboard = () => {
   
   const initialTemplateAForm = { from: '', to: '', vehicleType: 'Van (or Eeco)', billingType: 'Fixed', fixedKms: '', rate12h: '', rate24h: '', extraKmRate: '', extraHourRate: '', detentionCharges: '' };
   const initialTemplateBForm = { storeCode: '', storeName: '', location: '', city: '', state: '', zone: '', tataAceRate: '', tata407Rate: '', rate14ft: '', rate17ft: '', rate20ft: '', rate32ft7ton: '', rate32ft9ton: '', rate32ft10ton: '', rate32ft15ton: '', detentionCostPerDay: '', localPointCharges: '', outOfStatePointCharges: '' };
-  const initialTemplateDForm = { buVertical: '', rateType: 'Regular', vehicleType: 'TATA Ace', origin: '', fuelRate: '', agreedDays: '26', deploymentHour: '12', fixKm: '', rateAtFixKm: '', extraKmRate: '', extraHourRate: '', startEffectiveDate: '', expiryDate: '' };
+  const initialTemplateDForm = { 
+    // Original Fields
+    buVertical: '', 
+    rateType: 'Regular', 
+    origin: '', 
+    fuelRate: '', 
+    agreedDays: '26', 
+    deploymentHour: '12', 
+    fixKm: '', 
+    rateAtFixKm: '', 
+    extraKmRate: '', 
+    extraHourRate: '', 
+    startEffectiveDate: '', 
+    expiryDate: '',
+    // New fields
+    date: '', 
+    sourceHubName: '', 
+    clientName: '', 
+    supplierName: '', 
+    movementType: '', 
+    vehicleNumber: '', 
+    vehicleType: 'TATA Ace', 
+    parentVehicleNo: '', 
+    vendorName: '', 
+    vehicleOwnership: 'Adhoc', 
+    driverType: 'Contract / Vendor Driver',
+    startOdometer: '0', 
+    endOdometer: '0', 
+    freight: '0', 
+    dcmCharges: '0', 
+    tollAmount: '0' 
+  };
   const [templateAForm, setTemplateAForm] = useState(initialTemplateAForm);
   const [templateBForm, setTemplateBForm] = useState(initialTemplateBForm);
   const [templateDForm, setTemplateDForm] = useState(initialTemplateDForm);
@@ -631,17 +662,93 @@ const AdminDashboard = () => {
       alert("Origin is required.");
       return;
     }
+    
+    const startOdo = parseFloat(templateDForm.startOdometer) || 0;
+    const endOdo = parseFloat(templateDForm.endOdometer) || 0;
+    const totalDistance = endOdo > startOdo ? endOdo - startOdo : 0;
+    
+    const freight = parseFloat(templateDForm.freight) || 0;
+    const dcm = parseFloat(templateDForm.dcmCharges) || 0;
+    const toll = parseFloat(templateDForm.tollAmount) || 0;
+    const totalPayoutAmount = freight + dcm + toll;
+
+    const finalForm = {
+      ...templateDForm,
+      totalDistance,
+      totalPayoutAmount
+    };
+
     const updated = [...rows];
     if (editingRowIndex !== null) {
-      updated[editingRowIndex] = templateDForm;
+      updated[editingRowIndex] = finalForm;
       setEditingRowIndex(null);
     } else {
-      updated.push(templateDForm);
+      updated.push(finalForm);
     }
     setRows(updated);
     setWorkingRows(prev => ({ ...prev, TEMPLATE_D: updated }));
     setTemplateDForm(initialTemplateDForm);
     saveRatesToBackend(updated);
+  };
+
+  const importFromRunSheets = async () => {
+    try {
+      setGlobalLoading(true);
+      const url = `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/runsheets`;
+      const res = await axios.get(url, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'x-workspace-id': activeWorkspace || 'MAIN'
+        }
+      });
+      const runSheets = res.data.runSheets || [];
+      if (runSheets.length === 0) {
+        alert("No run sheets found to import.");
+        return;
+      }
+
+      const mappedRunSheets = runSheets.map(rs => ({
+        ...initialTemplateDForm,
+        runSheetId: rs._id,
+        date: rs.date ? rs.date.split('T')[0] : '',
+        sourceHubName: rs.sourceHubName || '',
+        clientName: rs.transport || '',
+        supplierName: rs.supplier || '',
+        movementType: rs.movementType || '',
+        vehicleNumber: rs.vehicleNumber || '',
+        vehicleType: rs.vehicleType || 'TATA Ace',
+        parentVehicleNo: rs.parentVehicleNumber || '',
+        vendorName: rs.vendor || '',
+        vehicleOwnership: rs.vehicleOwnershipType || 'Adhoc',
+        driverType: rs.driverType || 'Contract / Vendor Driver',
+        startOdometer: rs.startOdometer?.toString() || '0',
+        endOdometer: rs.endOdometer?.toString() || '0',
+        totalDistance: rs.distanceTravelled || 0,
+        freight: rs.freight?.toString() || '0',
+        dcmCharges: rs.dcmCharges?.toString() || '0',
+        tollAmount: rs.tollAmt?.toString() || '0',
+        totalPayoutAmount: rs.totalAmt || 0,
+      }));
+
+      const existingIds = new Set(rows.map(r => r.runSheetId).filter(Boolean));
+      const newRows = mappedRunSheets.filter(r => !existingIds.has(r.runSheetId));
+
+      if (newRows.length === 0) {
+        alert("All run sheets have already been imported.");
+        return;
+      }
+
+      const updated = [...rows, ...newRows];
+      setRows(updated);
+      setWorkingRows(prev => ({ ...prev, TEMPLATE_D: updated }));
+      saveRatesToBackend(updated);
+      alert(`Successfully imported ${newRows.length} new trip log(s)!`);
+    } catch (error) {
+      console.error("Error importing run sheets:", error);
+      alert("Failed to import run sheets.");
+    } finally {
+      setGlobalLoading(false);
+    }
   };
 
   const editRow = (index) => {
@@ -1686,28 +1793,109 @@ const AdminDashboard = () => {
 
                   {/* Render Template D */}
                   {templateType === 'TEMPLATE_D' && (
-                    <div className="space-y-4 pt-4 border-t border-slate-100">
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div className="space-y-6 pt-4 border-t border-slate-100">
+                      
+                      {/* Original Pricing Fields Card */}
+                      <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Deployment Row' : 'Add Deployment Row'}</h4>
+                          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Deployment Pricing Details</h4>
                           {editingRowIndex !== null && (
                             <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
                           )}
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">BU Vertical</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">BU Vertical</label>
                             <input type="text" name="buVertical" value={templateDForm.buVertical} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Rate Type</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Rate Type</label>
                             <select name="rateType" value={templateDForm.rateType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
                               <option value="Regular">Regular</option>
                               <option value="Adhoc">Adhoc</option>
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Vehicle Type</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Origin*</label>
+                            <input type="text" name="origin" value={templateDForm.origin} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Fuel Rate</label>
+                            <input type="number" min="0" step="0.01" name="fuelRate" value={templateDForm.fuelRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Agreed Days</label>
+                            <input type="number" min="0" name="agreedDays" value={templateDForm.agreedDays} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Deployment Hr</label>
+                            <input type="number" min="0" name="deploymentHour" value={templateDForm.deploymentHour} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Fix km</label>
+                            <input type="number" min="0" name="fixKm" value={templateDForm.fixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Rate at Fix km</label>
+                            <input type="number" min="0" name="rateAtFixKm" value={templateDForm.rateAtFixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Extra km rate</label>
+                            <input type="number" min="0" step="0.01" name="extraKmRate" value={templateDForm.extraKmRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Extra hour rate</label>
+                            <input type="number" min="0" name="extraHourRate" value={templateDForm.extraHourRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Start Effect. Date</label>
+                            <input type="date" name="startEffectiveDate" value={templateDForm.startEffectiveDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Expiry Date</label>
+                            <input type="date" name="expiryDate" value={templateDForm.expiryDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Trip & Operational Details Card */}
+                      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
+                          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Trip & Operational Details</h4>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+                            <input type="date" name="date" value={templateDForm.date} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Source Hub Name</label>
+                            <input type="text" name="sourceHubName" placeholder="e.g. Bhiwandi Hub" value={templateDForm.sourceHubName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Client Name</label>
+                            <select name="clientName" value={templateDForm.clientName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              <option value="">-- Select Client --</option>
+                              {workspaces.map(ws => <option key={ws._id} value={ws.companyName}>{ws.companyName}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Supplier Name</label>
+                            <select name="supplierName" value={templateDForm.supplierName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              <option value="">-- Select Supplier --</option>
+                              {suppliers.map(sup => <option key={sup._id} value={sup.supplierName}>{sup.supplierName}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Movement Type</label>
+                            <input type="text" name="movementType" placeholder="e.g. Linehaul, First Mile" value={templateDForm.movementType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vehicle Number</label>
+                            <input type="text" name="vehicleNumber" placeholder="MH04XX1234" value={templateDForm.vehicleNumber} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vehicle Type</label>
                             <select name="vehicleType" value={templateDForm.vehicleType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
                               {[
                                 'Van (or Eeco)', 
@@ -1726,74 +1914,112 @@ const AdminDashboard = () => {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Origin*</label>
-                            <input type="text" name="origin" value={templateDForm.origin} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Parent Vehicle No (Optional)</label>
+                            <input type="text" name="parentVehicleNo" placeholder="IF ATTACHED" value={templateDForm.parentVehicleNo} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Fuel Rate</label>
-                            <input type="number" min="0" step="0.01" name="fuelRate" value={templateDForm.fuelRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vendor Name (Optional)</label>
+                            <input type="text" name="vendorName" placeholder="Vendor Code or Name" value={templateDForm.vendorName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Agreed Days</label>
-                            <input type="number" min="0" name="agreedDays" value={templateDForm.agreedDays} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vehicle Ownership</label>
+                            <select name="vehicleOwnership" value={templateDForm.vehicleOwnership} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              <option value="Adhoc">Adhoc</option>
+                              <option value="Dedicated">Dedicated</option>
+                            </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Deployment Hr</label>
-                            <input type="number" min="0" name="deploymentHour" value={templateDForm.deploymentHour} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Driver Type</label>
+                            <select name="driverType" value={templateDForm.driverType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
+                              <option value="Contract / Vendor Driver">Contract / Vendor Driver</option>
+                              <option value="Company Driver">Company Driver</option>
+                            </select>
                           </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Fix km</label>
-                            <input type="number" min="0" name="fixKm" value={templateDForm.fixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Rate at Fix km</label>
-                            <input type="number" min="0" name="rateAtFixKm" value={templateDForm.rateAtFixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra km rate</label>
-                            <input type="number" min="0" step="0.01" name="extraKmRate" value={templateDForm.extraKmRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra hour rate</label>
-                            <input type="number" min="0" name="extraHourRate" value={templateDForm.extraHourRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Start Effect. Date</label>
-                            <input type="date" name="startEffectiveDate" value={templateDForm.startEffectiveDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Expiry Date</label>
-                            <input type="date" name="expiryDate" value={templateDForm.expiryDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                        </div>
-                        <div className="mt-4 flex justify-end">
-                          <button type="button" onClick={addOrUpdateRowTemplateD} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
-                            {editingRowIndex !== null ? 'Update Row' : 'Add Row'}
-                          </button>
                         </div>
                       </div>
-                      
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Odometer Log Card */}
+                        <div className="bg-sky-50/50 rounded-xl border border-sky-100 p-5 shadow-sm">
+                          <h4 className="text-sm font-bold text-sky-900 uppercase tracking-wide mb-4">Odometer Log</h4>
+                          <div className="grid grid-cols-2 gap-4 mb-5">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">Start Odometer (Meters/KM)</label>
+                              <input type="number" name="startOdometer" min="0" value={templateDForm.startOdometer} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-sky-500" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">End Odometer (Meters/KM)</label>
+                              <input type="number" name="endOdometer" min="0" value={templateDForm.endOdometer} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-sky-500" />
+                            </div>
+                          </div>
+                          <div className="bg-sky-100/70 p-3 rounded-lg flex justify-between items-center font-bold text-sky-900">
+                            <span>Total Distance Travelled:</span>
+                            <span className="text-lg">
+                              {Math.max(0, (parseFloat(templateDForm.endOdometer) || 0) - (parseFloat(templateDForm.startOdometer) || 0))} units
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Vendor Billing & Charges Card */}
+                        <div className="bg-emerald-50/50 rounded-xl border border-emerald-100 p-5 shadow-sm">
+                          <h4 className="text-sm font-bold text-emerald-900 uppercase tracking-wide mb-4">Vendor Billing & Charges</h4>
+                          <div className="grid grid-cols-2 gap-4 mb-5">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">Freight (₹)</label>
+                              <input type="number" name="freight" min="0" value={templateDForm.freight} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-emerald-500" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">DCM Charges (₹)</label>
+                              <input type="number" name="dcmCharges" min="0" value={templateDForm.dcmCharges} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-emerald-500" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">Toll Amount (₹)</label>
+                              <input type="number" name="tollAmount" min="0" value={templateDForm.tollAmount} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-emerald-500" />
+                            </div>
+                          </div>
+                          <div className="bg-emerald-200/50 p-3 rounded-lg flex justify-between items-center font-bold text-emerald-900">
+                            <span>Total Payout Amount:</span>
+                            <span className="text-xl">
+                              ₹{(parseFloat(templateDForm.freight) || 0) + (parseFloat(templateDForm.dcmCharges) || 0) + (parseFloat(templateDForm.tollAmount) || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end mt-4 mb-6">
+                        <button type="button" onClick={addOrUpdateRowTemplateD} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors shadow-md">
+                          {editingRowIndex !== null ? 'Update Deployment Row' : 'Add Deployment Row'}
+                        </button>
+                      </div>
+
+                      {/* Data Table */}
                       <div className="flex justify-between items-center mt-6 mb-2">
                         <h4 className="text-md font-semibold text-slate-700">Dedicated Deployment Pricing Table</h4>
+                        <button type="button" onClick={importFromRunSheets} className="bg-sky-600 hover:bg-sky-700 text-white font-medium py-1.5 px-4 rounded-lg text-sm shadow-sm flex items-center gap-1.5 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          Import Trip Logs
+                        </button>
                       </div>
-                      
                       <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
                         <table className="min-w-full divide-y divide-slate-200 text-xs">
                           <thead className="bg-slate-50">
                             <tr>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">BU Vertical</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Rate Type</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Vehicle Type</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Origin</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Fuel Rate</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Agreed Days</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Dep. Hr</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Fix km</th>
                               <th className="px-2 py-3 text-left font-semibold text-slate-600">Rate (Fix km)</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Ex km Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Ex hr Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Effective</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Expiry</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Date</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Source Hub</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Vehicle Type</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Vehicle No</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Distance</th>
+                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Payout</th>
                               <th className="px-2 py-3 text-center font-semibold text-slate-600 w-20">Action</th>
                             </tr>
                           </thead>
@@ -1802,17 +2028,18 @@ const AdminDashboard = () => {
                               <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
                                 <td className="px-2 py-3 text-slate-700">{row.buVertical || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.rateType || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.vehicleType || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.origin || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.fuelRate || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.agreedDays || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.deploymentHour || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.fixKm || '-'}</td>
                                 <td className="px-2 py-3 text-slate-700">{row.rateAtFixKm || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.extraKmRate || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.extraHourRate || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.startEffectiveDate || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.expiryDate || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.date || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.sourceHubName || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.vehicleType || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.vehicleNumber || '-'}</td>
+                                <td className="px-2 py-3 text-slate-700">{row.totalDistance || '0'}</td>
+                                <td className="px-2 py-3 text-slate-700 font-semibold text-emerald-700">₹{row.totalPayoutAmount || '0'}</td>
                                 <td className="px-2 py-3 text-center">
                                   <div className="flex justify-center gap-2">
                                     <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
@@ -1831,8 +2058,8 @@ const AdminDashboard = () => {
                             ))}
                             {rows.length === 0 && (
                               <tr>
-                                <td colSpan="14" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
-                                  No dedicated deployment rows added.
+                                <td colSpan="15" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
+                                  No deployment records added.
                                 </td>
                               </tr>
                             )}
