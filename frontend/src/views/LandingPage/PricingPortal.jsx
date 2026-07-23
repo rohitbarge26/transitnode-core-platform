@@ -89,11 +89,11 @@ const PricingPortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07111a] text-slate-100 font-sans selection:bg-teal-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0c10] via-[#101524] to-[#050608] text-slate-100 font-inter selection:bg-amber-500/30 overflow-x-hidden">
       
       {/* Background glow effects */}
-      <div className="fixed top-1/3 left-1/4 w-96 h-96 bg-teal-900/20 rounded-full blur-[120px] pointer-events-none z-0"></div>
-      <div className="fixed top-2/3 right-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <div className="fixed top-1/4 left-1/4 w-[500px] h-[500px] bg-slate-800/20 rounded-full blur-[150px] pointer-events-none z-0"></div>
+      <div className="fixed bottom-1/4 right-1/4 w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
       
       {/* Navbar */}
       <nav className="container mx-auto px-6 py-6 flex justify-between items-center relative z-50">
@@ -103,195 +103,199 @@ const PricingPortal = () => {
         </div>
         <button 
           onClick={() => { setSelectedPlan('free'); setShowModal(true); }}
-          className="bg-gradient-to-b from-gray-300 to-gray-500 hover:from-gray-200 hover:to-gray-400 text-slate-900 px-5 py-2 rounded-full font-bold transition-all shadow-lg text-sm"
+          className="font-montserrat font-medium uppercase tracking-tight bg-gradient-to-b from-gray-200 to-gray-400 hover:from-white hover:to-gray-300 text-slate-900 px-6 py-2.5 rounded-full transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] text-sm"
         >
           Start Free Trial
         </button>
       </nav>
 
       {/* Hero Segment */}
-      <header className="container mx-auto px-6 pt-8 pb-20 relative z-10 flex flex-col lg:flex-row items-start">
-        <div className="w-full lg:w-1/2 lg:pr-10 z-20">
-          <h1 className="text-4xl md:text-5xl lg:text-[56px] font-bold tracking-tight mb-6 leading-[1.1] text-white">
+      <header className="container mx-auto px-6 pt-12 pb-32 relative z-10 flex flex-col lg:flex-row items-start">
+        <div className="w-full lg:w-1/2 lg:pr-10 z-20 flex flex-col gap-6">
+          <h1 className="font-cinzel text-5xl md:text-6xl lg:text-[64px] font-bold tracking-[0.1em] mb-4 leading-[1.15] text-white uppercase drop-shadow-xl">
             ENTERPRISE <br /> FLEET CONTROL. <br /> ZERO FRICTION.
           </h1>
-          <p className="text-base text-slate-400 mb-8 leading-relaxed font-normal max-w-md">
+          <p className="font-inter text-lg text-slate-400 mb-6 leading-relaxed font-light max-w-lg">
             Enjoy your spreadsheet and hard, piecemeal legacy applications, and client corporate SO suspects.
           </p>
-          <div className="text-sm font-semibold text-slate-300 tracking-wider leading-loose">
+          <div className="font-cormorant text-lg font-medium text-[#e2d5c3] tracking-[0.15em] leading-loose uppercase">
             SCALE GLOBAL LOGISTICS.<br/>
             PRECISE TELEMATICS.<br/>
             MULTI-LANGUAGE APPS.<br/>
             ALL-IN-ONE PLATFORM.
           </div>
         </div>
-        <div className="w-full lg:w-1/2 relative mt-16 lg:mt-0 z-10 flex justify-center lg:justify-end min-h-[400px]">
-          {/* Hero background image will be placed here */}
+        <div className="w-full lg:w-1/2 relative mt-16 lg:mt-0 z-10 flex justify-center lg:justify-end min-h-[400px] lg:absolute lg:right-0 lg:top-0 lg:h-full lg:pointer-events-none overflow-hidden">
+          <img 
+            src="/hero_background.png" 
+            alt="Global Logistics Map" 
+            className="w-full h-auto object-cover max-w-[800px] lg:max-w-none lg:w-[120%] lg:-mr-[10%] opacity-80 mix-blend-screen drop-shadow-2xl"
+          />
         </div>
       </header>
 
       {/* Pricing Section */}
-      <section className="container mx-auto px-6 py-10 relative z-10">
-        <div className="text-center mb-12">
-          <h2 className="text-lg md:text-xl font-medium tracking-widest text-slate-400 uppercase">
+      <section className="container mx-auto px-6 py-16 relative z-10 space-y-16">
+        <div className="text-center mb-16">
+          <h2 className="font-cormorant text-2xl md:text-3xl font-medium tracking-[0.15em] text-[#e2d5c3] uppercase drop-shadow-md">
             SELECT YOUR OPERATIONAL<br/>VOLUME TIER
           </h2>
         </div>
         
-        <div className="max-w-4xl mx-auto flex flex-col space-y-6">
+        <div className="max-w-4xl mx-auto flex flex-col space-y-10">
           
-          {/* Card 1: 10-Day Exploration */}
-          <div className="flex flex-col md:flex-row items-stretch gap-4 relative">
-            <div className="flex-1 bg-[#101924]/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-7 relative flex flex-col justify-between">
-              <div className="absolute top-0 left-6 w-12 h-[3px] bg-slate-500 rounded-b-sm"></div>
+          {/* Card 1: 10-Day Exploration (Blue Tier - Carbon Fiber Weave) */}
+          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/10" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/carbon-fibre.png'), linear-gradient(to right, #0f172a, #1e293b)", backgroundBlendMode: "overlay" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent pointer-events-none"></div>
+            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-sm shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-white/5">
+              <div className="absolute top-0 left-8 w-16 h-[3px] bg-blue-500 rounded-b-sm shadow-[0_0_12px_rgba(59,130,246,0.8)]"></div>
               
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-8 mt-2">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">10-Day Exploration</h3>
-                  <p className="text-slate-400 text-xs">Enjoy free learning on five pre-built fleet tools.</p>
+                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">10-Day Exploration</h3>
+                  <p className="font-inter text-slate-400 text-sm font-light">Enjoy free learning on five pre-built fleet tools.</p>
                 </div>
-                <div className="w-10 h-10 rounded-full border-[3px] border-slate-700/50 relative">
-                </div>
+                <div className="w-12 h-12 rounded-full border-[3px] border-slate-600/50 shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]"></div>
               </div>
               
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-xs text-slate-300 mb-6">
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" /> Full fleet supply chain options</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" /> 1 Lesson payment</li>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-300 mb-8 font-inter font-light">
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-blue-400 mr-3 flex-shrink-0" /> Full fleet supply chain options</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-blue-400 mr-3 flex-shrink-0" /> 1 Lesson payment</li>
               </ul>
               
               <div className="flex justify-between items-end mt-auto">
-                <div className="text-[10px] text-slate-500 max-w-[60%] leading-relaxed"></div>
-                <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="px-5 py-2 rounded-lg border border-slate-600/80 hover:bg-slate-700/50 transition-colors text-xs font-semibold text-slate-300">
+                <div className="text-xs text-slate-500 max-w-[60%] leading-relaxed"></div>
+                <button onClick={() => { setSelectedPlan('free'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(0,0,0,0.39)]">
                   Start Free Trial
                 </button>
               </div>
             </div>
             
-            <div className="w-full md:w-56 bg-[#101924]/80 backdrop-blur-md border border-slate-700/60 rounded-xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-slate-800/10 to-transparent"></div>
-              <div className="bg-slate-800/80 border border-slate-700 text-slate-300 text-[9px] px-3 py-1 rounded-full mb-4 font-bold tracking-widest relative z-10">BEGINNER TIER</div>
-              <div className="text-4xl font-bold text-white mb-1 relative z-10">₹0</div>
-              <div className="text-slate-500 text-[10px] uppercase font-semibold relative z-10 mt-1">Price</div>
+            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-sm bg-black/20 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
+              <div className="font-cormorant bg-slate-800/80 border border-slate-600/50 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">BEGINNER TIER</div>
+              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹0</div>
+              <div className="font-inter text-slate-400 text-xs uppercase font-medium relative z-10 mt-1 tracking-widest">Price</div>
             </div>
           </div>
 
-          {/* Card 2: 3-Year Acceleration */}
-          <div className="flex flex-col md:flex-row items-stretch gap-4 relative">
-            <div className="absolute inset-0 bg-teal-500/5 blur-3xl rounded-3xl -z-10 transform scale-110"></div>
-            <div className="flex-1 bg-[#101924]/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-7 relative flex flex-col justify-between shadow-lg shadow-teal-900/10">
-              <div className="absolute top-0 left-6 w-12 h-[3px] bg-teal-500 rounded-b-sm shadow-[0_0_8px_rgba(20,184,166,0.8)]"></div>
+          {/* Card 2: 3-Year Acceleration (Green Tier - Emerald Marble) */}
+          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-[0_20px_50px_rgba(4,47,46,0.5)] rounded-xl overflow-hidden ring-1 ring-[#059669]/30" style={{ backgroundImage: "linear-gradient(to right, rgba(2, 44, 34, 0.95), rgba(2, 44, 34, 0.8)), url('https://images.unsplash.com/photo-1596160522500-1c4627b0c306?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none"></div>
+            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-md shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-[#059669]/20">
+              <div className="absolute top-0 left-8 w-16 h-[3px] bg-emerald-400 rounded-b-sm shadow-[0_0_12px_rgba(52,211,153,0.8)]"></div>
               
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-8 mt-2">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">3-Year Acceleration</h3>
-                  <p className="text-slate-400 text-xs">Give your supply team massive data opportunity leverage.</p>
+                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">3-Year Acceleration</h3>
+                  <p className="font-inter text-emerald-100/70 text-sm font-light">Give your supply team massive data opportunity leverage.</p>
                 </div>
-                <div className="w-10 h-10 rounded-full border-[3px] border-slate-700 relative">
-                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-teal-500 border-l-transparent border-b-transparent transform rotate-45 shadow-[0_0_8px_rgba(20,184,166,0.3)]"></div>
+                <div className="w-12 h-12 rounded-full border-[3px] border-emerald-900/50 shadow-[inset_0_0_10px_rgba(16,185,129,0.2)] relative">
+                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-emerald-400 border-l-transparent border-b-transparent transform rotate-45 shadow-[0_0_12px_rgba(52,211,153,0.4)]"></div>
                 </div>
               </div>
               
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-xs text-slate-300 mb-6">
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0" /> Flexible access matrix</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0" /> Full Tally XML integration</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0" /> 10 m/s and fast tracking nodes</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0" /> Standard email access</li>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-100 mb-8 font-inter font-light">
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> Flexible access matrix</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> Full Tally XML integration</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> 10 m/s and fast tracking nodes</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" /> Standard email access</li>
               </ul>
               
               <div className="flex justify-between items-end mt-auto">
-                <div className="text-[10px] text-slate-500 max-w-[60%] leading-relaxed">Quantitatively accurate out of interception track line logging interfaces.</div>
-                <button onClick={() => { setSelectedPlan('silver'); setShowModal(true); }} className="px-5 py-2 rounded-lg border border-slate-600/80 hover:bg-slate-700/50 transition-colors text-xs font-semibold text-white">
+                <div className="text-xs text-emerald-100/50 max-w-[60%] leading-relaxed font-light">Quantitatively accurate out of interception track line logging interfaces.</div>
+                <button onClick={() => { setSelectedPlan('silver'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-emerald-400/30 hover:bg-emerald-400/10 hover:border-emerald-400/60 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(4,47,46,0.39)]">
                   Upgrade to 3 Year
                 </button>
               </div>
             </div>
             
-            <div className="w-full md:w-56 bg-[#101924]/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-lg shadow-teal-900/10">
-              <div className="absolute inset-0 bg-gradient-to-b from-teal-900/20 to-transparent"></div>
-              <div className="bg-teal-900/40 border border-teal-800/50 text-teal-400 text-[9px] px-3 py-1 rounded-full mb-4 font-bold tracking-widest relative z-10">GROWTH PHASE</div>
-              <div className="text-slate-500 text-[9px] uppercase font-semibold mb-1 relative z-10">SILVER PRICE POINT</div>
-              <div className="text-4xl font-bold text-white mb-1 relative z-10">₹50k</div>
-              <div className="text-teal-500 text-[10px] relative z-10">/ 36 Months upfront</div>
+            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-md bg-black/30 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/20 to-transparent pointer-events-none"></div>
+              <div className="font-cormorant bg-emerald-950/60 border border-emerald-700/50 text-emerald-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">GROWTH PHASE</div>
+              <div className="font-inter text-emerald-100/60 text-[10px] uppercase font-semibold mb-2 relative z-10 tracking-widest">SILVER PRICE POINT</div>
+              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹50k</div>
+              <div className="font-inter text-emerald-400/80 text-xs font-medium relative z-10">/ 36 Months upfront</div>
             </div>
           </div>
 
-          {/* Card 3: 5-Year Control Tower */}
-          <div className="flex flex-col md:flex-row items-stretch gap-4 relative">
-            <div className="absolute inset-0 bg-amber-500/5 blur-3xl rounded-3xl -z-10 transform scale-110"></div>
-            <div className="flex-1 bg-[#101924]/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-7 relative flex flex-col justify-between shadow-lg shadow-amber-900/10">
-              <div className="absolute top-0 left-6 w-12 h-[3px] bg-amber-500 rounded-b-sm shadow-[0_0_8px_rgba(245,158,11,0.8)]"></div>
+          {/* Card 3: 5-Year Control Tower (Orange/Gold Tier - Walnut Wood) */}
+          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-[0_20px_50px_rgba(67,30,15,0.5)] rounded-xl overflow-hidden ring-1 ring-[#f59e0b]/30" style={{ backgroundImage: "linear-gradient(to right, rgba(67, 30, 15, 0.95), rgba(67, 30, 15, 0.8)), url('https://images.unsplash.com/photo-1546413240-54a858140409?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent pointer-events-none"></div>
+            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-md shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-[#f59e0b]/20">
+              <div className="absolute top-0 left-8 w-16 h-[3px] bg-amber-400 rounded-b-sm shadow-[0_0_12px_rgba(251,191,36,0.8)]"></div>
               
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-8 mt-2">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">5-Year Control Tower</h3>
-                  <p className="text-slate-400 text-xs">Accessible access to the out of spectrum industry traits.</p>
+                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">5-Year Control Tower</h3>
+                  <p className="font-inter text-amber-100/70 text-sm font-light">Accessible access to the out of spectrum industry traits.</p>
                 </div>
-                <div className="w-10 h-10 rounded-full border-[3px] border-slate-700 relative">
-                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-amber-500 border-b-transparent transform rotate-12 shadow-[0_0_8px_rgba(245,158,11,0.3)]"></div>
+                <div className="w-12 h-12 rounded-full border-[3px] border-amber-900/50 shadow-[inset_0_0_10px_rgba(245,158,11,0.2)] relative">
+                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-amber-400 border-b-transparent transform rotate-12 shadow-[0_0_12px_rgba(251,191,36,0.4)]"></div>
                 </div>
               </div>
               
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-xs text-slate-300 mb-6">
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" /> 4 Teams cross & from rounds</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" /> Core audit compliance vaults</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" /> Full system cost on availability</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" /> Privacy and access spaces</li>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-100 mb-8 font-inter font-light">
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> 4 Teams cross & from rounds</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> Core audit compliance vaults</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> Full system cost on availability</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-amber-400 mr-3 flex-shrink-0" /> Privacy and access spaces</li>
               </ul>
               
               <div className="flex justify-between items-end mt-auto">
-                <div className="text-[10px] text-slate-500 max-w-[60%] leading-relaxed">Available in a step set up room call which track your line and instruction.</div>
-                <button onClick={() => { setSelectedPlan('platinum'); setShowModal(true); }} className="px-5 py-2 rounded-lg border border-slate-600/80 hover:bg-slate-700/50 transition-colors text-xs font-semibold text-white">
+                <div className="text-xs text-amber-100/50 max-w-[60%] leading-relaxed font-light">Available in a step set up room call which track your line and instruction.</div>
+                <button onClick={() => { setSelectedPlan('platinum'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-amber-400/30 hover:bg-amber-400/10 hover:border-amber-400/60 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(67,30,15,0.39)]">
                   Select Advanced Tier
                 </button>
               </div>
             </div>
             
-            <div className="w-full md:w-56 bg-[#101924]/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-lg shadow-amber-900/10">
-              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 to-transparent"></div>
-              <div className="bg-amber-900/40 border border-amber-800/50 text-amber-400 text-[9px] px-3 py-1 rounded-full mb-4 font-bold tracking-widest relative z-10">FULL DATA TRACK LIMIT</div>
-              <div className="text-slate-500 text-[9px] uppercase font-semibold mb-1 relative z-10">BUDGET TEMA PRICE</div>
-              <div className="text-4xl font-bold text-white mb-1 relative z-10">₹1.00L</div>
-              <div className="text-amber-500 text-[10px] relative z-10">/ 60 Months upfront</div>
+            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-md bg-black/30 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 to-transparent pointer-events-none"></div>
+              <div className="font-cormorant bg-amber-950/60 border border-amber-700/50 text-amber-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">FULL DATA TRACK LIMIT</div>
+              <div className="font-inter text-amber-100/60 text-[10px] uppercase font-semibold mb-2 relative z-10 tracking-widest">BUDGET TEMA PRICE</div>
+              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹1.00L</div>
+              <div className="font-inter text-amber-400/80 text-xs font-medium relative z-10">/ 60 Months upfront</div>
             </div>
           </div>
 
-          {/* Card 4: Lifetime Ownership */}
-          <div className="flex flex-col md:flex-row items-stretch gap-4 relative">
-            <div className="absolute inset-0 bg-indigo-500/5 blur-3xl rounded-3xl -z-10 transform scale-110"></div>
-            <div className="flex-1 bg-[#101924]/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-7 relative flex flex-col justify-between shadow-lg shadow-indigo-900/10">
-              <div className="absolute top-0 left-6 w-12 h-[3px] bg-indigo-500 rounded-b-sm shadow-[0_0_8px_rgba(99,102,241,0.8)]"></div>
+          {/* Card 4: Lifetime Ownership (Purple Tier - Violet Velvet) */}
+          <div className="flex flex-col md:flex-row items-stretch gap-0 relative shadow-[0_20px_50px_rgba(46,16,101,0.5)] rounded-xl overflow-hidden ring-1 ring-[#8b5cf6]/30" style={{ backgroundImage: "linear-gradient(to right, rgba(46, 16, 101, 0.95), rgba(46, 16, 101, 0.8)), url('https://images.unsplash.com/photo-1627914041793-010530752591?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent pointer-events-none"></div>
+            <div className="flex-1 p-8 relative flex flex-col justify-between backdrop-blur-md shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-r border-[#8b5cf6]/20">
+              <div className="absolute top-0 left-8 w-16 h-[3px] bg-violet-400 rounded-b-sm shadow-[0_0_12px_rgba(139,92,246,0.8)]"></div>
               
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-8 mt-2">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">Lifetime Ownership</h3>
-                  <p className="text-slate-400 text-xs">The best, last update. used in Partner Manufacturing tool.</p>
+                  <h3 className="font-inter font-medium text-2xl text-white mb-2 tracking-tight">Lifetime Ownership</h3>
+                  <p className="font-inter text-violet-100/70 text-sm font-light">The best, last update. used in Partner Manufacturing tool.</p>
                 </div>
-                <div className="w-10 h-10 rounded-full border-[3px] border-slate-700 relative">
-                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-indigo-500 border-l-transparent border-t-transparent transform rotate-45 shadow-[0_0_8px_rgba(99,102,241,0.3)]"></div>
+                <div className="w-12 h-12 rounded-full border-[3px] border-violet-900/50 shadow-[inset_0_0_10px_rgba(139,92,246,0.2)] relative">
+                  <div className="absolute inset-[-3px] rounded-full border-[3px] border-violet-400 border-l-transparent border-t-transparent transform rotate-45 shadow-[0_0_12px_rgba(139,92,246,0.4)]"></div>
                 </div>
               </div>
               
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-xs text-slate-300 mb-6">
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-indigo-500 mr-2 flex-shrink-0" /> And a gear set / ** ***** ****</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-indigo-500 mr-2 flex-shrink-0" /> Authentication options</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-indigo-500 mr-2 flex-shrink-0" /> Full prime q/m & accessibility</li>
-                <li className="flex items-start"><CheckIcon className="w-4 h-4 text-indigo-500 mr-2 flex-shrink-0" /> Adaptable telemetry partners manage</li>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm text-slate-100 mb-8 font-inter font-light">
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> And a gear set / ** ***** ****</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> Authentication options</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> Full prime q/m & accessibility</li>
+                <li className="flex items-start"><CheckIcon className="w-5 h-5 text-violet-400 mr-3 flex-shrink-0" /> Adaptable telemetry partners manage</li>
               </ul>
               
               <div className="flex justify-between items-end mt-auto">
-                <div className="text-[10px] text-slate-500 max-w-[60%] leading-relaxed">Unavailable on sub rather our clean call which track part logistical repository.</div>
-                <button onClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }} className="px-5 py-2 rounded-lg border border-slate-600/80 hover:bg-slate-700/50 transition-colors text-xs font-semibold text-white">
+                <div className="text-xs text-violet-100/50 max-w-[60%] leading-relaxed font-light">Unavailable on sub rather our clean call which track part logistical repository.</div>
+                <button onClick={() => { setSelectedPlan('lifetime'); setShowModal(true); }} className="font-montserrat px-6 py-3 rounded-lg border border-violet-400/30 hover:bg-violet-400/10 hover:border-violet-400/60 transition-colors text-sm font-medium uppercase tracking-tight text-white shadow-[0_4px_14px_0_rgba(46,16,101,0.39)]">
                   Check Out & Now
                 </button>
               </div>
             </div>
             
-            <div className="w-full md:w-56 bg-[#101924]/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-lg shadow-indigo-900/10">
-              <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 to-transparent"></div>
-              <div className="bg-indigo-900/40 border border-indigo-800/50 text-indigo-400 text-[9px] px-3 py-1 rounded-full mb-4 font-bold tracking-widest relative z-10">MAX DATA LIMITING</div>
-              <div className="text-slate-500 text-[9px] uppercase font-semibold mb-1 relative z-10">TIER 5 + EXCLUSIVE</div>
-              <div className="text-4xl font-bold text-white mb-1 relative z-10">₹5.00L</div>
-              <div className="text-indigo-400 text-[10px] relative z-10">Lifetime</div>
+            <div className="w-full md:w-64 p-8 flex flex-col items-center justify-center text-center relative backdrop-blur-md bg-black/30 shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-0 bg-gradient-to-b from-violet-900/20 to-transparent pointer-events-none"></div>
+              <div className="font-cormorant bg-violet-950/60 border border-violet-700/50 text-violet-300 text-xs px-4 py-1.5 rounded-full mb-6 font-semibold tracking-[0.1em] uppercase relative z-10 shadow-lg">MAX DATA LIMITING</div>
+              <div className="font-inter text-violet-100/60 text-[10px] uppercase font-semibold mb-2 relative z-10 tracking-widest">TIER 5 + EXCLUSIVE</div>
+              <div className="font-inter font-semibold text-5xl text-white mb-2 relative z-10 drop-shadow-lg">₹5.00L</div>
+              <div className="font-inter text-violet-400/80 text-xs font-medium relative z-10">Lifetime</div>
             </div>
           </div>
           
@@ -299,34 +303,37 @@ const PricingPortal = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="container mx-auto px-6 py-16 relative z-10 mt-8">
-        <div className="text-center mb-12">
-          <h2 className="text-lg md:text-xl font-bold text-slate-300">
+      <section className="container mx-auto px-6 py-24 relative z-10 mt-16">
+        <div className="text-center mb-16">
+          <h2 className="font-cormorant text-2xl md:text-3xl font-medium tracking-[0.15em] text-[#e2d5c3] uppercase drop-shadow-md">
             Trusted by Industry Leaders
           </h2>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-[1200px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-[1200px] mx-auto">
           {testimonials.map((t, idx) => (
-            <div key={idx} className="bg-[#101924]/80 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden flex flex-col group hover:bg-[#152130]/90 transition-colors">
-              <div className="h-44 w-full overflow-hidden">
+            <div key={idx} className="backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden flex flex-col group hover:-translate-y-1 transition-transform duration-500 shadow-2xl ring-1 ring-white/10" style={{ backgroundImage: "linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(240, 240, 245, 0.98)), url('https://images.unsplash.com/photo-1601657805126-7f4f6e1f06f5?q=80&w=800&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+              <div className="h-48 w-full overflow-hidden border-b border-slate-200/50">
                  <img src={t.image} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               </div>
-              <div className="p-5 flex-1 flex flex-col relative bg-[#0a1017]">
-                 <div className="flex space-x-1 text-amber-500 mb-3">
+              <div className="p-7 flex-1 flex flex-col relative text-slate-800">
+                 <div className="flex space-x-1 text-amber-500 mb-4 drop-shadow-sm">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                      <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     ))}
                  </div>
-                 <h4 className="font-bold text-white text-[13px] mb-2">{t.role}</h4>
-                 <p className="text-slate-400 text-[11px] leading-relaxed mb-6 font-light flex-1">
+                 <h4 className="font-inter font-semibold text-slate-900 text-sm mb-3 uppercase tracking-wider">{t.role}</h4>
+                 <p className="font-inter text-slate-600 text-[13px] leading-relaxed mb-8 font-light flex-1 italic">
                    {t.text}
                  </p>
-                 <div className="flex items-center space-x-3 pt-4">
-                    <div className="w-5 h-5 rounded-full bg-slate-600 flex items-center justify-center overflow-hidden">
+                 <div className="flex items-center space-x-4 pt-5 border-t border-slate-300/50">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-md">
                        <img src={t.avatar} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{t.company}</span>
+                    <div>
+                      <div className="font-inter text-[11px] font-bold text-slate-900 uppercase tracking-widest">{t.name}</div>
+                      <div className="font-inter text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{t.company}</div>
+                    </div>
                  </div>
               </div>
             </div>
@@ -342,19 +349,19 @@ const PricingPortal = () => {
       </section>
 
       {/* Footer minimal representation */}
-      <footer className="container mx-auto px-6 py-12 border-t border-slate-800/50 mt-10 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-slate-500 gap-8 relative z-10">
-        <div className="flex flex-col gap-2">
-           <div className="flex items-center space-x-2 mb-2">
-              <img src={brandLogo} alt="Logo" className="h-5 w-auto opacity-50 brightness-0 invert" />
-              <span className="font-semibold tracking-wide text-slate-400 text-xs">TransitNode</span>
+      <footer className="container mx-auto px-6 py-16 border-t border-slate-800 mt-20 flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-slate-500 gap-10 relative z-10">
+        <div className="flex flex-col gap-4">
+           <div className="flex items-center space-x-3 mb-2">
+              <img src={brandLogo} alt="Logo" className="h-6 w-auto opacity-70 brightness-0 invert" />
+              <span className="font-montserrat font-bold tracking-[0.2em] uppercase text-slate-300 text-xs">TransitNode</span>
            </div>
-           <p className="max-w-xs text-xs">We proudly present more open solutions up to start that the initial step through process parameters provides operation easily minimal.</p>
+           <p className="font-inter max-w-sm text-xs leading-loose text-slate-500 font-light">We proudly present more open solutions up to start that the initial step through process parameters provides operation easily minimal.</p>
         </div>
-        <div className="grid grid-cols-2 gap-12 text-slate-400 text-xs">
+        <div className="grid grid-cols-2 gap-16 text-slate-400 text-xs">
            <div>
-              <ul className="space-y-2">
-                 <li>Privacy Policy</li>
-                 <li>Terms of Use</li>
+              <ul className="space-y-4 font-montserrat uppercase tracking-wider font-medium text-[10px]">
+                 <li className="hover:text-white cursor-pointer transition-colors">Privacy Policy</li>
+                 <li className="hover:text-white cursor-pointer transition-colors">Terms of Use</li>
               </ul>
            </div>
         </div>

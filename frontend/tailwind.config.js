@@ -4,7 +4,14 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'cinzel': ['Cinzel', 'serif'],
+        'cormorant': ['"Cormorant Garamond"', 'serif'],
+        'inter': ['Inter', 'sans-serif'],
+        'montserrat': ['Montserrat', 'sans-serif'],
+      }
+    },
   },
   plugins: [],
 }
