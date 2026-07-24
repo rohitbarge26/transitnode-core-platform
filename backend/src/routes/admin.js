@@ -68,9 +68,13 @@ router.post('/employee/verify', upload.fields([
 // Vendor Rate Card Management
 router.post('/vendor-rate-card', upload.fields([
   { name: 'vehicleDocument', maxCount: 1 },
-  { name: 'driverLicenseDocument', maxCount: 1 }
+  { name: 'rcDocument', maxCount: 1 },
+  { name: 'insuranceDocument', maxCount: 1 },
+  { name: 'driverLicenseDocument', maxCount: 1 },
+  { name: 'driverIdDocument', maxCount: 1 }
 ]), adminController.createVendorRateCard);
 router.get('/vendor-rate-card', adminController.getVendorRateCards);
+router.delete('/vendor-rate-card/:id', adminController.deleteVendorRateCard);
 
 // Analytics
 router.get('/analytics/revenue', adminController.getAnalytics);

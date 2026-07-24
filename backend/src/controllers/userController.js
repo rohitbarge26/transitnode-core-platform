@@ -126,31 +126,39 @@ exports.setupAdmin = async (req, res) => {
       return res.status(200).json({ message: 'Admin credentials configured successfully' });
 
     } else if (workspaceId && workspaceId !== 'MAIN') {
-      // Scenario B: No existing user, create from scratch
+      // Scenario B: Workspace ID provided, update existing or create new admin user
       const tenant = await Tenant.findById(workspaceId);
       if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
-      if (tenant.adminSetupComplete) return res.status(400).json({ message: 'Setup already complete' });
-
-      const existingUser = await User.findOne({ username });
-      if (existingUser) return res.status(400).json({ message: 'Username is already taken' });
 
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      const newAdmin = new User({
-        tenantId: tenant._id,
-        username,
-        email: username, 
-        password: hashedPassword,
-        name: 'Admin - ' + tenant.companyName,
-        role: 'ADMIN'
-      });
-      await newAdmin.save();
+      let adminUser = await User.findOne({ tenantId: tenant._id, role: 'ADMIN' });
+      if (adminUser) {
+        adminUser.username = username;
+        if (username.includes('@')) adminUser.email = username;
+        adminUser.password = hashedPassword;
+        await adminUser.save();
+      } else {
+        adminUser = new User({
+          tenantId: tenant._id,
+          username,
+          email: username.includes('@') ? username : `admin@${tenant.customSubdomain}.prohitcoretech.in`,
+          password: hashedPassword,
+          name: 'Admin - ' + tenant.companyName,
+          role: 'ADMIN'
+        });
+        await adminUser.save();
+      }
 
       tenant.adminSetupComplete = true;
+      tenant.paymentStatus = 'PAID';
       await tenant.save();
 
-      return res.status(200).json({ message: 'Admin credentials configured successfully' });
+      return res.status(200).json({ 
+        message: 'Admin credentials configured successfully',
+        fullLoginUrl: tenant.fullLoginUrl 
+      });
 
     } else {
       return res.status(401).json({ message: 'Access Denied. Invalid or expired authentication token.' });

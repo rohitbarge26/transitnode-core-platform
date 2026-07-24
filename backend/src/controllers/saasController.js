@@ -37,8 +37,10 @@ exports.registerTenant = async (req, res) => {
     }
     
     // Generate the full login URL dynamically based on environment
-    const frontendDomain = process.env.FRONTEND_DOMAIN || 'localhost:3001';
-    const protocol = frontendDomain.includes('localhost') ? 'http' : 'https';
+    const hostHeader = req.headers.host || req.headers.origin || '';
+    const isLocalhost = hostHeader.includes('localhost') || hostHeader.includes('127.0.0.1') || process.env.NODE_ENV?.toUpperCase() === 'LOCALHOST';
+    const frontendDomain = isLocalhost ? 'localhost:3001' : (process.env.FRONTEND_DOMAIN || 'transitnode.prohitcoretech.com');
+    const protocol = isLocalhost ? 'http' : 'https';
     const fullLoginUrl = `${protocol}://${customSubdomain}.${frontendDomain}/login`;
 
     const newTenant = new Tenant({
@@ -106,16 +108,32 @@ exports.registerTenant = async (req, res) => {
       });
     }
 
-    // For paid plans, create Cashfree Order first
+    // For paid plans, create Cashfree Order & record initial transaction
     let amount = 0;
     if (mappedPlanType === 'LIFETIME') amount = 500000;
     else if (mappedPlanType === 'PLATINUM') amount = 100000;
     else if (mappedPlanType === 'SILVER') amount = 50000;
 
+    // Save transaction record for Master Admin tracking
+    try {
+      const existingTx = await SubscriptionTransaction.findOne({ tenantId: newTenant._id });
+      if (!existingTx) {
+        await SubscriptionTransaction.create({
+          tenantId: newTenant._id,
+          planType: mappedPlanType,
+          amount: amount,
+          paymentMethod: 'CASHFREE_GATEWAY',
+          createdAt: newTenant.createdAt || new Date()
+        });
+      }
+    } catch (txErr) {
+      console.error('[registerTenant] Transaction log notice:', txErr.message);
+    }
+
     const { createCashfreeOrder } = require('../config/cashfree');
     const orderId = `order_tenant_${newTenant._id}`;
     
-    const returnUrl = `${newTenant.fullLoginUrl}?payment_success=true`;
+    const returnUrl = `${protocol}://${customSubdomain}.${frontendDomain}/setup-admin?payment_success=true`;
 
     try {
       const cfOrder = await createCashfreeOrder(
@@ -139,7 +157,22 @@ exports.registerTenant = async (req, res) => {
         requiresPayment: true
       });
     } catch (cfError) {
-      console.error('Cashfree order creation failed:', cfError);
+      console.error('Cashfree order creation failed:', cfError.message);
+      
+      // Development/Local Fallback: If Cashfree fails or keys are missing in local mode, still return requiresPayment: true
+      if (process.env.NODE_ENV === 'localhost' || !process.env.CASHFREE_CLIENT_ID) {
+        console.log(`[DEV MODE] Created tenant ${newTenant.companyName}. Proceeding to Payment Integration step.`);
+
+        return res.status(201).json({
+          message: 'Tenant workspace created. Complete payment integration.',
+          tenantId: newTenant._id,
+          subdomain: customSubdomain,
+          requiresPayment: true,
+          isSimulatedPayment: true,
+          fullLoginUrl: newTenant.fullLoginUrl
+        });
+      }
+
       // Clean up the created tenant so they can try again with the same subdomain
       await User.deleteOne({ _id: newAdmin._id });
       await Tenant.deleteOne({ _id: newTenant._id });
@@ -189,14 +222,26 @@ exports.cashfreeWebhook = async (req, res) => {
           tenant.licenseExpiresAt = licenseExpiresAt;
           await tenant.save();
 
-          // Create the SubscriptionTransaction record
-          const transaction = new SubscriptionTransaction({
+          // Record Transaction with deduplication (30 minute window)
+          const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+          const existingTx = await SubscriptionTransaction.findOne({
             tenantId: tenant._id,
-            planType: tenant.planType,
-            amount: amount,
-            paymentMethod: `CASHFREE_${paymentMethod.toUpperCase()}`
+            createdAt: { $gte: thirtyMinsAgo }
           });
-          await transaction.save();
+
+          if (existingTx) {
+            existingTx.amount = amount || existingTx.amount;
+            existingTx.paymentMethod = `CASHFREE_${paymentMethod.toUpperCase()}`;
+            await existingTx.save();
+          } else {
+            const transaction = new SubscriptionTransaction({
+              tenantId: tenant._id,
+              planType: tenant.planType,
+              amount: amount,
+              paymentMethod: `CASHFREE_${paymentMethod.toUpperCase()}`
+            });
+            await transaction.save();
+          }
           
           console.log(`[CASHFREE WEBHOOK] Tenant ${tenant.companyName} marked as PAID. Plan: ${tenant.planType}`);
         }
@@ -222,8 +267,27 @@ exports.getTenantProfile = async (req, res) => {
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
-    // If payment status is PENDING and it is a paid plan, check Cashfree order directly (fallback/local development)
-    if (tenant.paymentStatus === 'PENDING' && tenant.planType !== 'TRIAL') {
+    // Auto-fix for LIFETIME plan if expiry was set to an old date or payment status was PENDING
+    if (tenant.planType === 'LIFETIME') {
+      let needsSave = false;
+      const farFuture = new Date();
+      farFuture.setFullYear(farFuture.getFullYear() + 100);
+      
+      if (!tenant.licenseExpiresAt || new Date(tenant.licenseExpiresAt) < new Date()) {
+        tenant.licenseExpiresAt = farFuture;
+        needsSave = true;
+      }
+      if (tenant.paymentStatus !== 'PAID') {
+        tenant.paymentStatus = 'PAID';
+        needsSave = true;
+      }
+      if (needsSave) {
+        await tenant.save();
+      }
+    }
+
+    // If payment status is PENDING and it is a paid non-lifetime plan, check Cashfree order directly (fallback/local development)
+    if (tenant.paymentStatus === 'PENDING' && tenant.planType !== 'TRIAL' && tenant.planType !== 'LIFETIME') {
       try {
         const { getCashfreeOrder } = require('../config/cashfree');
         const orderId = `order_tenant_${tenant._id}`;
@@ -231,9 +295,7 @@ exports.getTenantProfile = async (req, res) => {
         
         if (cfOrder && cfOrder.order_status === 'PAID') {
           const licenseExpiresAt = new Date();
-          if (tenant.planType === 'LIFETIME') {
-            licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
-          } else if (tenant.planType === 'PLATINUM') {
+          if (tenant.planType === 'PLATINUM') {
             licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5);
           } else if (tenant.planType === 'SILVER') {
             licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3);
@@ -278,10 +340,10 @@ exports.getTenantProfile = async (req, res) => {
     // Verify license status
     const now = new Date();
     if (tenant.isSuspended) {
-      return res.status(403).json({ error: 'Tenant subscription has expired or is suspended' });
+      return res.status(403).json({ error: 'Tenant subscription has expired or is suspended. Please contact administrator.' });
     }
-    if (tenant.licenseExpiresAt && tenant.licenseExpiresAt < now) {
-      return res.status(403).json({ error: 'Tenant subscription has expired or is suspended' });
+    if (tenant.planType !== 'LIFETIME' && tenant.licenseExpiresAt && tenant.licenseExpiresAt < now) {
+      return res.status(403).json({ error: 'Tenant subscription has expired or is suspended. Please contact administrator.' });
     }
 
     return res.status(200).json({
@@ -334,14 +396,26 @@ exports.processCheckout = async (req, res) => {
     tenant.licenseExpiresAt = licenseExpiresAt;
     await tenant.save();
 
-    // Record Transaction
-    const transaction = new SubscriptionTransaction({
+    // Record Transaction with deduplication (30 minute window)
+    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const existingTx = await SubscriptionTransaction.findOne({
       tenantId: tenant._id,
-      planType: tenant.planType,
-      amount: amount || 0,
-      paymentMethod: paymentMethod || 'unknown'
+      createdAt: { $gte: thirtyMinsAgo }
     });
-    await transaction.save();
+
+    if (existingTx) {
+      existingTx.amount = amount || existingTx.amount;
+      existingTx.paymentMethod = paymentMethod || existingTx.paymentMethod;
+      await existingTx.save();
+    } else {
+      const transaction = new SubscriptionTransaction({
+        tenantId: tenant._id,
+        planType: tenant.planType,
+        amount: amount || 0,
+        paymentMethod: paymentMethod || 'unknown'
+      });
+      await transaction.save();
+    }
 
     return res.status(200).json({ 
       success: true, 

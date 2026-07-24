@@ -35,9 +35,9 @@ const tenantResolver = async (req, res, next) => {
     }
 
     const currentTimestamp = new Date();
-    if (currentTimestamp >= tenant.licenseExpiresAt) {
+    if (tenant.planType !== 'LIFETIME' && tenant.licenseExpiresAt && currentTimestamp >= tenant.licenseExpiresAt) {
       return res.status(403).json({ 
-        error: 'Subscription License Expired. Access Denied. Please navigate to the pricing portal to choose a Silver or Platinum package.' 
+        error: 'Tenant subscription has expired or is suspended. Please contact administrator.' 
       });
     }
 

@@ -12,5 +12,7 @@ router.get('/dashboard-summary', masterAdminController.dashboardSummary);
 router.get('/tenant/:tenantId', masterAdminController.getTenantDetails);
 router.post('/setup-first-user', masterAdminController.setupFirstUser);
 router.put('/tenant/:tenantId/suspend', masterAdminController.toggleTenantSuspension);
+router.put('/tenant/:tenantId/subscription', masterAdminController.updateTenantSubscription);
+router.delete('/purge-specified-tenants', masterAdminController.purgeSpecifiedTenants);
 
 module.exports = router;

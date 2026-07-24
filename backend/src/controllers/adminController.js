@@ -930,7 +930,10 @@ exports.createVendorRateCard = async (req, res) => {
 
     const fileUrl = '/uploads/';
     const vehicleDocumentUrl = req.files && req.files.vehicleDocument ? `${fileUrl}${req.files.vehicleDocument[0].filename}` : null;
+    const rcDocumentUrl = req.files && req.files.rcDocument ? `${fileUrl}${req.files.rcDocument[0].filename}` : null;
+    const insuranceDocumentUrl = req.files && req.files.insuranceDocument ? `${fileUrl}${req.files.insuranceDocument[0].filename}` : null;
     const driverLicenseDocumentUrl = req.files && req.files.driverLicenseDocument ? `${fileUrl}${req.files.driverLicenseDocument[0].filename}` : null;
+    const driverIdDocumentUrl = req.files && req.files.driverIdDocument ? `${fileUrl}${req.files.driverIdDocument[0].filename}` : null;
 
     const computedTotal = Number(totalRate) || (Number(baseRate || 0) + Number(tollCharge || 0) + Number(dcmCharge || 0));
 
@@ -945,8 +948,11 @@ exports.createVendorRateCard = async (req, res) => {
       totalRate: computedTotal,
       vehicleDetails: vehicleDetails || '',
       vehicleDocumentUrl,
+      rcDocumentUrl,
+      insuranceDocumentUrl,
       driverName: driverName || '',
       driverLicenseDocumentUrl,
+      driverIdDocumentUrl,
     });
 
     res.status(201).json({ message: 'Vendor Rate Card created successfully!', vendorRateCard });
@@ -965,6 +971,18 @@ exports.getVendorRateCards = async (req, res) => {
   } catch (error) {
     console.error('Error fetching Vendor Rate Cards:', error);
     res.status(500).json({ message: 'Server error fetching Vendor Rate Cards' });
+  }
+};
+
+exports.deleteVendorRateCard = async (req, res) => {
+  try {
+    const VendorRateCard = require('../models/NoSQL/VendorRateCard');
+    const { id } = req.params;
+    await VendorRateCard.findOneAndDelete({ _id: id, tenantId: req.user.tenantId });
+    res.status(200).json({ message: 'Vendor Rate Card deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting Vendor Rate Card:', error);
+    res.status(500).json({ message: 'Server error deleting Vendor Rate Card' });
   }
 };
 

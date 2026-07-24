@@ -81,6 +81,10 @@ const tenantSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    hasUsedTrial: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

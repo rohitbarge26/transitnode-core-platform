@@ -12,8 +12,11 @@ const vendorRateCardSchema = new mongoose.Schema(
     totalRate: { type: Number, default: 0 },
     vehicleDetails: { type: String, default: '' },
     vehicleDocumentUrl: { type: String, default: null },
+    rcDocumentUrl: { type: String, default: null },
+    insuranceDocumentUrl: { type: String, default: null },
     driverName: { type: String, default: '' },
     driverLicenseDocumentUrl: { type: String, default: null },
+    driverIdDocumentUrl: { type: String, default: null },
   },
   {
     timestamps: true,

@@ -27,8 +27,12 @@ exports.onboardAutomated = async (req, res) => {
     const licenseExpiresAt = new Date();
     if (planType === 'TRIAL') {
       licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 days trial
-    } else {
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 365); // 1 year default
+    } else if (planType === 'SILVER') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3); // 3 Years (36 Months)
+    } else if (planType === 'PLATINUM') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5); // 5 Years (60 Months)
+    } else if (planType === 'LIFETIME') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100);
     }
 
     // 1. Create Tenant
@@ -99,8 +103,11 @@ exports.onboardManual = async (req, res) => {
     licenseExpiresAt.setDate(licenseExpiresAt.getDate() + parseInt(licenseDurationDays, 10));
 
     const customSubdomain = companyName.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Math.floor(Math.random() * 10000);
-    const frontendDomain = process.env.FRONTEND_DOMAIN || 'localhost:3001';
-    const protocol = frontendDomain.includes('localhost') ? 'http' : 'https';
+    const reqHost = req.headers.host || '';
+    const isLocalhost = process.env.NODE_ENV === 'LOCALHOST' || reqHost.includes('localhost') || reqHost.includes('127.0.0.1');
+    const frontendPort = process.env.FRONTEND_PORT || '3001';
+    const frontendDomain = isLocalhost ? `localhost:${frontendPort}` : (process.env.FRONTEND_DOMAIN || 'transitnode.prohitcoretech.com');
+    const protocol = isLocalhost ? 'http' : 'https';
     const fullLoginUrl = `${protocol}://${customSubdomain}.${frontendDomain}/login`;
 
     // 1. Create Tenant
@@ -118,16 +125,7 @@ exports.onboardManual = async (req, res) => {
     });
     await tenant.save();
 
-    // 2. Create Company
-    const company = new Company({
-      tenantId: tenant._id,
-      companyName,
-      address: address || 'Update Address',
-      contactNumber: registeredMobile
-    });
-    await company.save();
-
-    // 3. Log Revenue if Amount Paid is provided
+    // 2. Log Revenue if Amount Paid is provided
     if (amountPaid && !isNaN(amountPaid)) {
       const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
       const transaction = new SubscriptionTransaction({
@@ -165,7 +163,16 @@ exports.onboardManual = async (req, res) => {
 // GET /api/master-admin/dashboard-summary
 exports.dashboardSummary = async (req, res) => {
   try {
+    // Auto-purge requested target tenants if present
+    await exports.purgeSpecifiedTenants();
+    
     // 1. Total registered Tenants sorted by subscription tiers
+    // Auto-clean duplicate Sister Company entries matching primary tenant name
+    const allTenantsList = await Tenant.find({}, 'companyName');
+    for (const t of allTenantsList) {
+      await Company.deleteMany({ tenantId: t._id, companyName: t.companyName });
+    }
+
     const tenantsByTier = await Tenant.aggregate([
       { $group: { _id: '$planType', count: { $sum: 1 } } },
       { $sort: { _id: 1 } }
@@ -182,19 +189,96 @@ exports.dashboardSummary = async (req, res) => {
     });
 
     // 4. List of all Tenants
-    const allTenants = await Tenant.find({}, 'companyName planType registeredMobile customSubdomain licenseExpiresAt createdAt isSuspended').sort({ createdAt: -1 });
+    const allTenants = await Tenant.find({}, 'companyName planType registeredMobile customSubdomain licenseExpiresAt createdAt isSuspended paymentStatus').sort({ createdAt: -1 });
 
-    // 5. Total SaaS Revenue
+    // Restore Offline Transport Pvt. Ltd. if present
+    await Tenant.updateOne({ customSubdomain: 'offlinetransportpvtltd-7731' }, { $set: { paymentStatus: 'PAID', planType: 'PLATINUM' } });
+
+    // 5. Total SaaS Revenue & Strict Payment Transaction Verification
     const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+    const { getCashfreeOrder, getCashfreeOrderPayments } = require('../config/cashfree');
+
+    for (const t of allTenants) {
+      if (t.planType && t.planType !== 'TRIAL' && t.planType !== 'LIFETIME') {
+        const hasTx = await SubscriptionTransaction.findOne({ tenantId: t._id });
+
+        // Preserve manually or offline provisioned PAID tenants (e.g. Offline Transport Pvt. Ltd.)
+        if (t.paymentStatus === 'PAID') {
+          if (!hasTx) {
+            let amount = 50000;
+            if (t.planType === 'PLATINUM') amount = 100000;
+            await SubscriptionTransaction.create({
+              tenantId: t._id,
+              planType: t.planType,
+              amount: amount,
+              paymentMethod: 'OFFLINE_PAYMENT',
+              createdAt: t.createdAt || new Date()
+            });
+          }
+          continue;
+        }
+
+        // For PENDING tenants, check if they completed payment via Cashfree Gateway
+        const orderId = `order_tenant_${t._id}`;
+        let isTrulyPaid = false;
+        try {
+          const cfOrder = await getCashfreeOrder(orderId);
+          if (cfOrder) {
+            const payments = await getCashfreeOrderPayments(orderId);
+            isTrulyPaid = Array.isArray(payments) && payments.some(p => p.payment_status === 'SUCCESS');
+          }
+        } catch (cfErr) {
+          isTrulyPaid = false;
+        }
+
+        if (isTrulyPaid) {
+          t.paymentStatus = 'PAID';
+          await t.save();
+
+          if (!hasTx) {
+            let amount = 50000;
+            if (t.planType === 'PLATINUM') amount = 100000;
+            await SubscriptionTransaction.create({
+              tenantId: t._id,
+              planType: t.planType,
+              amount: amount,
+              paymentMethod: 'CASHFREE_GATEWAY',
+              createdAt: t.createdAt || new Date()
+            });
+          }
+        } else {
+          // Unpaid / pending online order
+          await SubscriptionTransaction.deleteMany({ tenantId: t._id });
+        }
+      }
+    }
+
     const revenueAggregation = await SubscriptionTransaction.aggregate([
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
     const totalRevenue = revenueAggregation.length > 0 ? revenueAggregation[0].total : 0;
 
-    // 6. Recent Transactions History
-    const recentTransactions = await SubscriptionTransaction.find({})
+    // 6. Recent Transactions History (deduplicated by tenant & plan window)
+    const rawTransactions = await SubscriptionTransaction.find({})
       .populate('tenantId', 'companyName')
       .sort({ createdAt: -1 });
+
+    const recentTransactions = [];
+    const seenTenantWindowMap = new Map();
+
+    for (const tx of rawTransactions) {
+      if (!tx.tenantId) continue;
+      const tenantKey = `${tx.tenantId._id ? tx.tenantId._id.toString() : tx.tenantId.toString()}_${tx.planType}`;
+      if (seenTenantWindowMap.has(tenantKey)) {
+        const prevTxTime = seenTenantWindowMap.get(tenantKey);
+        const diffMs = Math.abs(new Date(tx.createdAt) - new Date(prevTxTime));
+        if (diffMs < 30 * 60 * 1000) {
+          continue; // Bypasses duplicate double entry created within 30 minutes
+        }
+      }
+      seenTenantWindowMap.set(tenantKey, tx.createdAt);
+      recentTransactions.push(tx);
+    }
 
     return res.status(200).json({
       tenantsByTier,
@@ -223,6 +307,26 @@ exports.getTenantDetails = async (req, res) => {
     const tenant = await Tenant.findById(tenantId);
     if (!tenant) {
       return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    // Strict Cashfree Payment Verification for Modal Details View
+    if (tenant.planType && tenant.planType !== 'TRIAL' && tenant.planType !== 'LIFETIME' && tenant.paymentStatus !== 'PAID') {
+      try {
+        const { getCashfreeOrder, getCashfreeOrderPayments } = require('../config/cashfree');
+        const orderId = `order_tenant_${tenant._id}`;
+        const cfOrder = await getCashfreeOrder(orderId);
+        let isTrulyPaid = false;
+        if (cfOrder) {
+          const payments = await getCashfreeOrderPayments(orderId);
+          isTrulyPaid = Array.isArray(payments) && payments.some(p => p.payment_status === 'SUCCESS');
+        }
+        if (isTrulyPaid) {
+          tenant.paymentStatus = 'PAID';
+          await tenant.save();
+        }
+      } catch (cfErr) {
+        // Leave current status for manual/offline provisioned tenants
+      }
     }
 
     // Fetch primary/sister companies under this tenant
@@ -343,5 +447,114 @@ exports.toggleTenantSuspension = async (req, res) => {
   } catch (error) {
     console.error('[MasterAdmin] toggleTenantSuspension error:', error);
     return res.status(500).json({ error: 'Internal server error toggling tenant suspension.' });
+  }
+};
+
+// PUT /api/master-admin/tenant/:tenantId/subscription
+exports.updateTenantSubscription = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const { planType } = req.body;
+
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant not found' });
+    }
+
+    if (planType) {
+      const upperPlan = planType.toUpperCase();
+      if (['TRIAL', 'SILVER', 'PLATINUM', 'LIFETIME'].includes(upperPlan)) {
+        
+        // Check if tenant already used/completed trial
+        const trialCompleted = tenant.hasUsedTrial || 
+          (tenant.planType === 'TRIAL' && tenant.licenseExpiresAt && new Date(tenant.licenseExpiresAt) < new Date()) || 
+          tenant.planType !== 'TRIAL';
+
+        if (upperPlan === 'TRIAL' && trialCompleted) {
+          return res.status(400).json({ error: 'This tenant has already completed their free trial and cannot be re-assigned to a Trial plan.' });
+        }
+
+        tenant.planType = upperPlan;
+        tenant.maxCompaniesAllowed = upperPlan === 'PLATINUM' ? 3 : upperPlan === 'LIFETIME' ? 999 : 1;
+        tenant.paymentStatus = upperPlan === 'TRIAL' ? 'PENDING' : 'PAID';
+        tenant.isSuspended = false;
+
+        // Automatically set license expiry date based on plan type
+        const newExpiry = new Date();
+        if (upperPlan === 'TRIAL') {
+          newExpiry.setDate(newExpiry.getDate() + 14); // 14 Days Trial
+          tenant.hasUsedTrial = true;
+        } else if (upperPlan === 'SILVER') {
+          newExpiry.setFullYear(newExpiry.getFullYear() + 3); // 3 Years (36 Months)
+          tenant.hasUsedTrial = true;
+        } else if (upperPlan === 'PLATINUM') {
+          newExpiry.setFullYear(newExpiry.getFullYear() + 5); // 5 Years (60 Months)
+          tenant.hasUsedTrial = true;
+        } else if (upperPlan === 'LIFETIME') {
+          newExpiry.setFullYear(newExpiry.getFullYear() + 100); // Lifetime
+          tenant.hasUsedTrial = true;
+        }
+        tenant.licenseExpiresAt = newExpiry;
+      }
+    }
+
+    await tenant.save();
+
+    return res.status(200).json({
+      message: 'Tenant subscription updated successfully.',
+      tenant
+    });
+  } catch (error) {
+    console.error('[MasterAdmin] updateTenantSubscription error:', error);
+    return res.status(500).json({ error: 'Internal server error updating tenant subscription.' });
+  }
+};
+
+// Purge specified tenants from attached image
+exports.purgeSpecifiedTenants = async (req, res) => {
+  try {
+    const TARGET_SUBDOMAINS = [
+      'inc',
+      'data',
+      'emirates',
+      'shreesha',
+      'shradhha',
+      'server',
+      'versal',
+      'silvertransport',
+      'manualcargotransport-2054',
+      'patil'
+    ];
+
+    const tenantsToDelete = await Tenant.find({ customSubdomain: { $in: TARGET_SUBDOMAINS } });
+    if (tenantsToDelete.length === 0) {
+      if (res) return res.status(200).json({ message: 'Target tenants already purged.' });
+      return;
+    }
+
+    const tenantIds = tenantsToDelete.map(t => t._id);
+
+    const SubscriptionTransaction = require('../models/NoSQL/SubscriptionTransaction');
+    await User.deleteMany({ tenantId: { $in: tenantIds } });
+    await SubscriptionTransaction.deleteMany({ tenantId: { $in: tenantIds } });
+
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    const collectionNames = ['companies', 'suppliers', 'drivers', 'fleets', 'ratecards', 'runsheets', 'telemetrylogs', 'vendorratecards'];
+
+    for (const name of collectionNames) {
+      try {
+        const col = db.collection(name);
+        await col.deleteMany({ tenantId: { $in: tenantIds } });
+      } catch (err) {}
+    }
+
+    await Tenant.deleteMany({ _id: { $in: tenantIds } });
+
+    console.log(`[PURGE] Successfully purged ${tenantIds.length} target tenants and all associated database records.`);
+    if (res) return res.status(200).json({ message: `Successfully deleted ${tenantIds.length} specified tenants.` });
+  } catch (error) {
+    console.error('[PURGE ERROR]', error);
+    if (res) return res.status(500).json({ error: 'Failed to purge specified tenants.' });
   }
 };

@@ -139,9 +139,11 @@ const AdminDashboard = () => {
     dcmCharge: '',
     totalRate: '',
     vehicleDetails: '',
-    vehicleDocument: null,
+    rcDocument: null,
+    insuranceDocument: null,
     driverName: '',
-    driverLicenseDocument: null
+    driverLicenseDocument: null,
+    driverIdDocument: null
   });
   const [profileForm, setProfileForm] = useState({
     name: '', email: '', username: '', mobileNumber: '', password: ''
@@ -151,6 +153,7 @@ const AdminDashboard = () => {
   const [fleetAssets, setFleetAssets] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [vendorRateCards, setVendorRateCards] = useState([]);
 
   useEffect(() => {
     const allowedRoles = ['ADMIN', 'ACCOUNTANT', 'OPERATION', 'OPERATION_EXECUTIVE'];
@@ -280,6 +283,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'PROFILE') {
       fetchProfile();
+    } else if (activeTab === 'RATE_CARD') {
+      fetchVendorRateCards();
     }
   }, [activeTab]);
 
@@ -703,65 +708,7 @@ const AdminDashboard = () => {
     saveRatesToBackend(updated);
   };
 
-  const importFromRunSheets = async () => {
-    try {
-      setGlobalLoading(true);
-      const url = `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/runsheets`;
-      const res = await axios.get(url, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'x-workspace-id': activeWorkspace || 'MAIN'
-        }
-      });
-      const runSheets = res.data.runSheets || [];
-      if (runSheets.length === 0) {
-        alert("No run sheets found to import.");
-        return;
-      }
 
-      const mappedRunSheets = runSheets.map(rs => ({
-        ...initialTemplateDForm,
-        runSheetId: rs._id,
-        date: rs.date ? rs.date.split('T')[0] : '',
-        sourceHubName: rs.sourceHubName || '',
-        clientName: rs.transport || '',
-        supplierName: rs.supplier || '',
-        movementType: rs.movementType || '',
-        vehicleNumber: rs.vehicleNumber || '',
-        vehicleType: rs.vehicleType || 'TATA Ace',
-        parentVehicleNo: rs.parentVehicleNumber || '',
-        vendorName: rs.vendor || '',
-        vehicleOwnership: rs.vehicleOwnershipType || 'Adhoc',
-        driverType: rs.driverType || 'Contract / Vendor Driver',
-        startOdometer: rs.startOdometer?.toString() || '0',
-        endOdometer: rs.endOdometer?.toString() || '0',
-        totalDistance: rs.distanceTravelled || 0,
-        freight: rs.freight?.toString() || '0',
-        dcmCharges: rs.dcmCharges?.toString() || '0',
-        tollAmount: rs.tollAmt?.toString() || '0',
-        totalPayoutAmount: rs.totalAmt || 0,
-      }));
-
-      const existingIds = new Set(rows.map(r => r.runSheetId).filter(Boolean));
-      const newRows = mappedRunSheets.filter(r => !existingIds.has(r.runSheetId));
-
-      if (newRows.length === 0) {
-        alert("All run sheets have already been imported.");
-        return;
-      }
-
-      const updated = [...rows, ...newRows];
-      setRows(updated);
-      setWorkingRows(prev => ({ ...prev, TEMPLATE_D: updated }));
-      saveRatesToBackend(updated);
-      alert(`Successfully imported ${newRows.length} new trip log(s)!`);
-    } catch (error) {
-      console.error("Error importing run sheets:", error);
-      alert("Failed to import run sheets.");
-    } finally {
-      setGlobalLoading(false);
-    }
-  };
 
   const editRow = (index) => {
     if (templateType === 'TEMPLATE_A') {
@@ -952,8 +899,10 @@ const AdminDashboard = () => {
       formData.append('totalRate', computedTotal);
       formData.append('vehicleDetails', vendorRateCardForm.vehicleDetails || '');
       formData.append('driverName', vendorRateCardForm.driverName || '');
-      if (vendorRateCardForm.vehicleDocument) formData.append('vehicleDocument', vendorRateCardForm.vehicleDocument);
+      if (vendorRateCardForm.rcDocument) formData.append('rcDocument', vendorRateCardForm.rcDocument);
+      if (vendorRateCardForm.insuranceDocument) formData.append('insuranceDocument', vendorRateCardForm.insuranceDocument);
       if (vendorRateCardForm.driverLicenseDocument) formData.append('driverLicenseDocument', vendorRateCardForm.driverLicenseDocument);
+      if (vendorRateCardForm.driverIdDocument) formData.append('driverIdDocument', vendorRateCardForm.driverIdDocument);
 
       await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/vendor-rate-card`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
@@ -961,11 +910,36 @@ const AdminDashboard = () => {
       alert('Vendor Rate Card created successfully!');
       setVendorRateCardForm({
         vendorName: '', vehicleType: '14-Ft Container', baseRate: '', tollCharge: '', dcmCharge: '', totalRate: '',
-        vehicleDetails: '', vehicleDocument: null, driverName: '', driverLicenseDocument: null
+        vehicleDetails: '', rcDocument: null, insuranceDocument: null, driverName: '', driverLicenseDocument: null, driverIdDocument: null
       });
+      fetchVendorRateCards();
     } catch (error) {
       console.error('Vendor Rate Card creation error:', error);
       alert(error.response?.data?.message || 'Failed to save Vendor Rate Card');
+    }
+  };
+
+  const fetchVendorRateCards = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/vendor-rate-card`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setVendorRateCards(res.data.rateCards || []);
+    } catch (error) {
+      console.error('Failed to fetch vendor rate cards', error);
+    }
+  };
+
+  const handleDeleteVendorRateCard = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this vendor rate card and its uploaded documents?")) return;
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/vendor-rate-card/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Vendor Rate Card deleted successfully!');
+      fetchVendorRateCards();
+    } catch (error) {
+      alert('Failed to delete Vendor Rate Card');
     }
   };
 
@@ -1516,9 +1490,9 @@ const AdminDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Vehicle Details & Document */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">Vehicle Details</label>
+                    {/* Vehicle Details & Required Vehicle Documents */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-slate-700">Vehicle Details</label>
                       <input 
                         type="text" 
                         placeholder="Vehicle Details (e.g. MH-12-AB-1234)" 
@@ -1526,19 +1500,31 @@ const AdminDashboard = () => {
                         onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleDetails: e.target.value})} 
                         className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
                       />
-                      <div>
-                        <label className="block text-xs text-slate-500 mb-1">Vehicle Document</label>
-                        <input 
-                          type="file" 
-                          onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleDocument: e.target.files[0]})} 
-                          className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Registration Certificate (RC)</label>
+                          <input 
+                            type="file" 
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, rcDocument: e.target.files[0]})} 
+                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Vehicle Insurance Policy</label>
+                          <input 
+                            type="file" 
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, insuranceDocument: e.target.files[0]})} 
+                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    {/* Driver Details & Document */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">Driver Details</label>
+                    {/* Driver Details & Required Driver Documents */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-slate-700">Driver Details</label>
                       <input 
                         type="text" 
                         placeholder="Driver Name" 
@@ -1546,19 +1532,162 @@ const AdminDashboard = () => {
                         onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverName: e.target.value})} 
                         className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
                       />
-                      <div>
-                        <label className="block text-xs text-slate-500 mb-1">Driving Licence Document</label>
-                        <input 
-                          type="file" 
-                          onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverLicenseDocument: e.target.files[0]})} 
-                          className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Commercial Driving Licence (DL)</label>
+                          <input 
+                            type="file" 
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverLicenseDocument: e.target.files[0]})} 
+                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Aadhaar Card / PAN Card</label>
+                          <input 
+                            type="file" 
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverIdDocument: e.target.files[0]})} 
+                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <button type="submit" className="w-full bg-emerald-600 text-white py-2.5 px-4 rounded-md hover:bg-emerald-700 transition font-medium text-sm shadow-sm">Save Vendor Rate Card</button>
                   </form>
                 </div>
+              </div>
+
+              {/* Saved Vendor Rate Cards & Documents Vault Table */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Saved Vendor Rate Cards & Documents</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">View all vendor pricing cards and uploaded vehicle/driver compliance documents</p>
+                  </div>
+                  <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
+                    {vendorRateCards.length} Saved Cards
+                  </span>
+                </div>
+
+                {vendorRateCards.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-sm font-medium">
+                    No Vendor Rate Cards saved yet. Fill out the form above to add vendor rates and documents.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                          <th className="p-3">Vendor / Vehicle</th>
+                          <th className="p-3">Vehicle Reg & Docs</th>
+                          <th className="p-3">Driver Details & Docs</th>
+                          <th className="p-3">Rate Breakdown</th>
+                          <th className="p-3 text-right">Total Rate</th>
+                          <th className="p-3 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {vendorRateCards.map(card => (
+                          <tr key={card._id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3 font-medium text-slate-900">
+                              <div className="font-bold text-slate-900">{card.vendorName}</div>
+                              <span className="inline-block bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded mt-1">
+                                {card.vehicleType}
+                              </span>
+                            </td>
+
+                            <td className="p-3 text-slate-700">
+                              <div className="font-semibold text-slate-800 mb-1">
+                                {card.vehicleDetails || 'N/A'}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {card.rcDocumentUrl ? (
+                                  <a
+                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.rcDocumentUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                  >
+                                    📄 RC Document
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">No RC</span>
+                                )}
+
+                                {card.insuranceDocumentUrl ? (
+                                  <a
+                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.insuranceDocumentUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                  >
+                                    🛡️ Insurance
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">No Insurance</span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="p-3 text-slate-700">
+                              <div className="font-semibold text-slate-800 mb-1">
+                                {card.driverName || 'N/A'}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {card.driverLicenseDocumentUrl ? (
+                                  <a
+                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.driverLicenseDocumentUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                  >
+                                    🪪 Commercial DL
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">No DL</span>
+                                )}
+
+                                {card.driverIdDocumentUrl ? (
+                                  <a
+                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.driverIdDocumentUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                  >
+                                    🆔 Aadhaar/PAN
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">No ID</span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="p-3 text-slate-600 text-xs">
+                              <div>Base: ₹{card.baseRate || 0}</div>
+                              <div>Toll: ₹{card.tollCharge || 0} | DCM: ₹{card.dcmCharge || 0}</div>
+                            </td>
+
+                            <td className="p-3 text-right font-black text-slate-900 text-base">
+                              ₹{(card.totalRate || 0).toLocaleString('en-IN')}
+                            </td>
+
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={() => handleDeleteVendorRateCard(card._id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition"
+                                title="Delete Vendor Rate Card"
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               {/* Rate Card Configuration */}
@@ -2126,14 +2255,8 @@ const AdminDashboard = () => {
                       </div>
 
                       {/* Data Table */}
-                      <div className="flex justify-between items-center mt-6 mb-2">
+                      <div className="mt-6 mb-2">
                         <h4 className="text-md font-semibold text-slate-700">Fix Vehicle Rate Table</h4>
-                        <button type="button" onClick={importFromRunSheets} className="bg-sky-600 hover:bg-sky-700 text-white font-medium py-1.5 px-4 rounded-lg text-sm shadow-sm flex items-center gap-1.5 transition-colors">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                          Import Trip Logs
-                        </button>
                       </div>
                       <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
                         <table className="min-w-full divide-y divide-slate-200 text-xs">

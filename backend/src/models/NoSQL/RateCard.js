@@ -12,7 +12,7 @@ const rateCardSchema = new mongoose.Schema(
     },
     templateType: {
       type: String,
-      enum: ['TEMPLATE_A', 'TEMPLATE_B', 'TEMPLATE_D'],
+      enum: ['TEMPLATE_A', 'TEMPLATE_B', 'TEMPLATE_C', 'TEMPLATE_D'],
       default: 'TEMPLATE_A',
       required: true,
     },

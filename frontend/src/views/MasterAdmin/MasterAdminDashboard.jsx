@@ -45,6 +45,58 @@ const MasterAdminDashboard = () => {
   const [tenantDetails, setTenantDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
+  // Subscription Update State
+  const [editingSubscriptionTenant, setEditingSubscriptionTenant] = useState(null);
+  const [subForm, setSubForm] = useState({
+    planType: 'TRIAL',
+    extensionDays: '30',
+    customExpiryDate: ''
+  });
+  const [isUpdatingSub, setIsUpdatingSub] = useState(false);
+
+  const isTenantTrialCompleted = (tenant) => {
+    if (!tenant) return false;
+    if (tenant.hasUsedTrial) return true;
+    if (tenant.planType !== 'TRIAL') return true;
+    if (tenant.planType === 'TRIAL' && tenant.licenseExpiresAt && new Date(tenant.licenseExpiresAt) < new Date()) return true;
+    return false;
+  };
+
+  const openSubscriptionModal = (tenant) => {
+    setEditingSubscriptionTenant(tenant);
+    const trialDone = isTenantTrialCompleted(tenant);
+    setSubForm({
+      planType: (trialDone && (tenant.planType === 'TRIAL' || !tenant.planType)) ? 'SILVER' : (tenant.planType || 'SILVER')
+    });
+  };
+
+  const handleSaveSubscription = async (e) => {
+    e.preventDefault();
+    if (!editingSubscriptionTenant) return;
+    try {
+      setIsUpdatingSub(true);
+      const res = await axios.put(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/master-admin/tenant/${editingSubscriptionTenant._id}/subscription`,
+        {
+          planType: subForm.planType
+        },
+        { headers: getHeaders() }
+      );
+      
+      alert('Subscription updated successfully!');
+      setEditingSubscriptionTenant(null);
+      fetchDashboardSummary();
+      if (selectedTenantId === editingSubscriptionTenant._id) {
+        fetchTenantDetails(editingSubscriptionTenant._id);
+      }
+    } catch (error) {
+      console.error('Failed to update subscription:', error);
+      alert(error.response?.data?.error || 'Failed to update subscription.');
+    } finally {
+      setIsUpdatingSub(false);
+    }
+  };
+
   // Success Modal State
   const [onboardSuccess, setOnboardSuccess] = useState(null);
 
@@ -534,11 +586,11 @@ const MasterAdminDashboard = () => {
                           {tenant.customSubdomain}
                         </td>
                         <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            tenant.planType === 'LIFETIME' ? 'bg-purple-100 text-purple-800' :
-                            tenant.planType === 'PLATINUM' ? 'bg-slate-800 text-slate-200' :
-                            tenant.planType === 'SILVER' ? 'bg-slate-200 text-slate-800' :
-                            'bg-blue-100 text-blue-800'
+                          <span className={`px-2.5 py-1 rounded text-xs font-bold border ${
+                            tenant.planType === 'LIFETIME' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                            tenant.planType === 'PLATINUM' ? 'bg-amber-100 text-amber-900 border-amber-300' :
+                            tenant.planType === 'SILVER' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                            'bg-blue-100 text-blue-800 border-blue-200'
                           }`}>
                             {tenant.planType}
                           </span>
@@ -548,14 +600,27 @@ const MasterAdminDashboard = () => {
                           {tenant.planType === 'LIFETIME' ? (
                             <span className="font-semibold text-purple-700">Lifetime</span>
                           ) : (
-                            new Date(tenant.licenseExpiresAt).toLocaleDateString()
+                            <div className="flex items-center gap-1.5">
+                              <span className={new Date(tenant.licenseExpiresAt) < new Date() ? 'text-red-600 font-bold' : 'text-slate-600'}>
+                                {new Date(tenant.licenseExpiresAt).toLocaleDateString()}
+                              </span>
+                              {new Date(tenant.licenseExpiresAt) < new Date() && (
+                                <span className="bg-red-100 text-red-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded">EXPIRED</span>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="p-4 text-slate-500">{new Date(tenant.createdAt).toLocaleDateString()}</td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 text-right space-x-2">
+                          <button 
+                             onClick={() => openSubscriptionModal(tenant)}
+                             className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md border border-emerald-200 transition-colors"
+                          >
+                            Update Plan
+                          </button>
                           <button 
                              onClick={() => fetchTenantDetails(tenant._id)}
-                             className="text-indigo-600 hover:text-indigo-800 font-medium text-sm transition-colors"
+                             className="text-indigo-600 hover:text-indigo-800 font-medium text-xs transition-colors"
                           >
                             View Details
                           </button>
@@ -594,16 +659,46 @@ const MasterAdminDashboard = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Plan Type</label>
-                  <select value={manualForm.planType} onChange={e => setManualForm({...manualForm, planType: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 border bg-white">
-                    <option value="TRIAL">Trial</option>
-                    <option value="SILVER">Silver</option>
-                    <option value="PLATINUM">Platinum</option>
-                    <option value="LIFETIME">Lifetime</option>
+                  <select 
+                    value={manualForm.planType} 
+                    onChange={e => {
+                      const selectedPlan = e.target.value;
+                      let days = '14';
+                      if (selectedPlan === 'SILVER') days = '1095';
+                      else if (selectedPlan === 'PLATINUM') days = '1825';
+                      else if (selectedPlan === 'LIFETIME') days = '36500';
+                      setManualForm({
+                        ...manualForm, 
+                        planType: selectedPlan,
+                        licenseDurationDays: days
+                      });
+                    }} 
+                    className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2.5 border bg-white font-medium text-slate-800"
+                  >
+                    <option value="TRIAL">Trial (14 Days)</option>
+                    <option value="SILVER">Silver (3 Years)</option>
+                    <option value="PLATINUM">Platinum (5 Years)</option>
+                    <option value="LIFETIME">Lifetime (No Expiry)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">License Duration (Days)</label>
-                  <input type="number" required value={manualForm.licenseDurationDays} onChange={e => setManualForm({...manualForm, licenseDurationDays: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 border bg-white" placeholder="e.g. 365" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Subscription Period</label>
+                  <div className="w-full border border-slate-300 bg-slate-50/80 rounded-md p-2.5 flex items-center justify-between">
+                    <span className="font-semibold text-sm text-slate-800">
+                      {manualForm.planType === 'TRIAL' && '14 Days Free Trial'}
+                      {manualForm.planType === 'SILVER' && '3 Years (36 Months)'}
+                      {manualForm.planType === 'PLATINUM' && '5 Years (60 Months)'}
+                      {manualForm.planType === 'LIFETIME' && 'Lifetime Access (No Expiry)'}
+                    </span>
+                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded uppercase ${
+                      manualForm.planType === 'LIFETIME' ? 'bg-purple-100 text-purple-800' :
+                      manualForm.planType === 'PLATINUM' ? 'bg-slate-800 text-slate-200' :
+                      manualForm.planType === 'SILVER' ? 'bg-slate-200 text-slate-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {manualForm.planType}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -800,6 +895,27 @@ const MasterAdminDashboard = () => {
                     </div>
                   </div>
 
+                  {/* Subscription License & Update Banner */}
+                  <div className="bg-gradient-to-r from-indigo-900 to-slate-900 border border-slate-800 rounded-xl p-4 text-white shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Subscription License Expiry</span>
+                        {tenantDetails.tenant.planType !== 'LIFETIME' && new Date(tenantDetails.tenant.licenseExpiresAt) < new Date() && (
+                          <span className="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Expired</span>
+                        )}
+                      </div>
+                      <p className="text-lg font-black mt-1">
+                        {tenantDetails.tenant.planType === 'LIFETIME' ? 'Lifetime License (No Expiry)' : new Date(tenantDetails.tenant.licenseExpiresAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => openSubscriptionModal(tenantDetails.tenant)}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                    >
+                      Update / Extend Subscription
+                    </button>
+                  </div>
+
                   {/* Subdomain URL */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-3">
                     <div className="flex-shrink-0 w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center">
@@ -920,6 +1036,66 @@ const MasterAdminDashboard = () => {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Subscription Modal */}
+      {editingSubscriptionTenant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95">
+            <div className="bg-indigo-600 p-4 sm:p-6 text-white flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold">Update Tenant Subscription</h2>
+                <p className="text-indigo-200 text-xs mt-0.5">{editingSubscriptionTenant.companyName} ({editingSubscriptionTenant.customSubdomain})</p>
+              </div>
+              <button onClick={() => setEditingSubscriptionTenant(null)} className="text-indigo-200 hover:text-white transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveSubscription} className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Select Subscription Plan</label>
+                <select 
+                  value={subForm.planType} 
+                  onChange={e => setSubForm({...subForm, planType: e.target.value})} 
+                  className="w-full border-slate-300 rounded-lg p-3 text-sm border bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                >
+                  <option 
+                    value="TRIAL" 
+                    disabled={isTenantTrialCompleted(editingSubscriptionTenant)}
+                  >
+                    Trial (14 Days Free){isTenantTrialCompleted(editingSubscriptionTenant) ? ' — [Completed / Unavailable]' : ''}
+                  </option>
+                  <option value="SILVER">Silver Package (3-Year Acceleration - 36 Months)</option>
+                  <option value="PLATINUM">Platinum Package (5-Year Control Tower - 60 Months)</option>
+                  <option value="LIFETIME">Lifetime License (Unlimited)</option>
+                </select>
+              </div>
+
+              <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 text-xs text-indigo-900 leading-relaxed">
+                <span className="font-bold block mb-1">ℹ️ License Expiry Policy:</span>
+                Updating the plan tier automatically calculates and sets the tenant's license expiration date based on the selected plan duration (14 Days for Trial, 3 Years / 36 Months for Silver, 5 Years / 60 Months for Platinum, Lifetime for Lifetime License).
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setEditingSubscriptionTenant(null)} 
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isUpdatingSub}
+                  className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isUpdatingSub ? 'Updating...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

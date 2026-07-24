@@ -1,7 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { TenantBrandingContext } from '../context/TenantBrandingContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,11 +12,19 @@ const Login = () => {
   const [initLoading, setInitLoading] = useState(false);
   
   const { login } = useContext(AuthContext);
+  const { tenantProfile } = useContext(TenantBrandingContext);
   const navigate = useNavigate();
 
   const hostname = window.location.hostname;
   const subdomain = hostname.split('.')[0];
   const isMasterAdminPortal = subdomain.toLowerCase() === 'masteradmin';
+
+  // Redirect to Admin Setup if workspace payment is complete but admin setup is pending
+  useEffect(() => {
+    if (tenantProfile && tenantProfile.adminSetupComplete === false && !isMasterAdminPortal && subdomain && subdomain !== 'www') {
+      navigate('/setup-admin');
+    }
+  }, [tenantProfile, isMasterAdminPortal, subdomain, navigate]);
 
   const [successMessage, setSuccessMessage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
