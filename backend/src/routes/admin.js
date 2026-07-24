@@ -65,6 +65,13 @@ router.post('/employee/verify', upload.fields([
   { name: 'addressProof', maxCount: 1 }
 ]), adminController.verifyEmployee);
 
+// Vendor Rate Card Management
+router.post('/vendor-rate-card', upload.fields([
+  { name: 'vehicleDocument', maxCount: 1 },
+  { name: 'driverLicenseDocument', maxCount: 1 }
+]), adminController.createVendorRateCard);
+router.get('/vendor-rate-card', adminController.getVendorRateCards);
+
 // Analytics
 router.get('/analytics/revenue', adminController.getAnalytics);
 

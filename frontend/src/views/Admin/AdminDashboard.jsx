@@ -131,6 +131,18 @@ const AdminDashboard = () => {
   const [employeeForm, setEmployeeForm] = useState({
     employeeId: '', employeeName: '', aadhaar: null, pan: null, addressProof: null
   });
+  const [vendorRateCardForm, setVendorRateCardForm] = useState({
+    vendorName: '',
+    vehicleType: '14-Ft Container',
+    baseRate: '',
+    tollCharge: '',
+    dcmCharge: '',
+    totalRate: '',
+    vehicleDetails: '',
+    vehicleDocument: null,
+    driverName: '',
+    driverLicenseDocument: null
+  });
   const [profileForm, setProfileForm] = useState({
     name: '', email: '', username: '', mobileNumber: '', password: ''
   });
@@ -923,6 +935,40 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleCreateVendorRateCard = async (e) => {
+    e.preventDefault();
+    if (!vendorRateCardForm.vendorName || !vendorRateCardForm.vehicleType) {
+      alert("Vendor Name and Vehicle Type are required.");
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append('vendorName', vendorRateCardForm.vendorName);
+      formData.append('vehicleType', vendorRateCardForm.vehicleType);
+      formData.append('baseRate', vendorRateCardForm.baseRate || 0);
+      formData.append('tollCharge', vendorRateCardForm.tollCharge || 0);
+      formData.append('dcmCharge', vendorRateCardForm.dcmCharge || 0);
+      const computedTotal = vendorRateCardForm.totalRate !== '' ? vendorRateCardForm.totalRate : (Number(vendorRateCardForm.tollCharge || 0) + Number(vendorRateCardForm.dcmCharge || 0) + Number(vendorRateCardForm.baseRate || 0));
+      formData.append('totalRate', computedTotal);
+      formData.append('vehicleDetails', vendorRateCardForm.vehicleDetails || '');
+      formData.append('driverName', vendorRateCardForm.driverName || '');
+      if (vendorRateCardForm.vehicleDocument) formData.append('vehicleDocument', vendorRateCardForm.vehicleDocument);
+      if (vendorRateCardForm.driverLicenseDocument) formData.append('driverLicenseDocument', vendorRateCardForm.driverLicenseDocument);
+
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/admin/vendor-rate-card`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      alert('Vendor Rate Card created successfully!');
+      setVendorRateCardForm({
+        vendorName: '', vehicleType: '14-Ft Container', baseRate: '', tollCharge: '', dcmCharge: '', totalRate: '',
+        vehicleDetails: '', vehicleDocument: null, driverName: '', driverLicenseDocument: null
+      });
+    } catch (error) {
+      console.error('Vendor Rate Card creation error:', error);
+      alert(error.response?.data?.message || 'Failed to save Vendor Rate Card');
+    }
+  };
+
   const handleDeleteDriver = async (id) => {
     if (!window.confirm("Are you sure you want to delete this driver and their login access?")) return;
     try {
@@ -1399,31 +1445,118 @@ const AdminDashboard = () => {
                   </form>
                 </div>
 
-                {/* Employee Verification Form */}
+                {/* Vendor Rate Card Form */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">Employee Verification</h3>
-                  <form onSubmit={handleVerifyEmployee} className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-slate-800">Vendor Rate Card</h3>
+                    <span className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-full border border-indigo-100">Rate Setup</span>
+                  </div>
+                  <form onSubmit={handleCreateVendorRateCard} className="space-y-4">
+                    {/* Name */}
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
-                      <input type="text" required value={employeeForm.employeeId} onChange={e => setEmployeeForm({...employeeForm, employeeId: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm p-2 border" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Vendor Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="Enter Vendor Name" 
+                        value={vendorRateCardForm.vendorName} 
+                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, vendorName: e.target.value})} 
+                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
+                      />
                     </div>
+
+                    {/* Vehicle Type Dropdown */}
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Employee Name</label>
-                      <input type="text" required value={employeeForm.employeeName} onChange={e => setEmployeeForm({...employeeForm, employeeName: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm p-2 border" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle Type</label>
+                      <select 
+                        value={vendorRateCardForm.vehicleType} 
+                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleType: e.target.value})} 
+                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border bg-white text-sm"
+                      >
+                        {['14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', 'TATA Ace', 'Van (or Eeco)', '32-Ft MX Container', '32-Ft SXL Container', 'Other'].map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Aadhaar Card (Compulsory)</label>
-                      <input type="file" required onChange={e => setEmployeeForm({...employeeForm, aadhaar: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+
+                    {/* Rate Section */}
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Rate Breakdown</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Toll Charge (₹)</label>
+                          <input 
+                            type="number" 
+                            placeholder="0" 
+                            value={vendorRateCardForm.tollCharge} 
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, tollCharge: e.target.value})} 
+                            className="w-full border-slate-300 rounded-md p-2 border text-sm bg-white" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">DCM Charge (₹)</label>
+                          <input 
+                            type="number" 
+                            placeholder="0" 
+                            value={vendorRateCardForm.dcmCharge} 
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, dcmCharge: e.target.value})} 
+                            className="w-full border-slate-300 rounded-md p-2 border text-sm bg-white" 
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Total Rate (₹)</label>
+                        <input 
+                          type="number" 
+                          placeholder="Calculated automatically" 
+                          value={vendorRateCardForm.totalRate !== '' ? vendorRateCardForm.totalRate : (Number(vendorRateCardForm.tollCharge || 0) + Number(vendorRateCardForm.dcmCharge || 0))} 
+                          onChange={e => setVendorRateCardForm({...vendorRateCardForm, totalRate: e.target.value})} 
+                          className="w-full border-slate-300 rounded-md p-2 border text-sm font-semibold bg-white text-emerald-700" 
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">PAN Card (Compulsory)</label>
-                      <input type="file" required onChange={e => setEmployeeForm({...employeeForm, pan: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+
+                    {/* Vehicle Details & Document */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700">Vehicle Details</label>
+                      <input 
+                        type="text" 
+                        placeholder="Vehicle Details (e.g. MH-12-AB-1234)" 
+                        value={vendorRateCardForm.vehicleDetails} 
+                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleDetails: e.target.value})} 
+                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
+                      />
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Vehicle Document</label>
+                        <input 
+                          type="file" 
+                          onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleDocument: e.target.files[0]})} 
+                          className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Address Proof (e.g. Light Bill - Compulsory)</label>
-                      <input type="file" required onChange={e => setEmployeeForm({...employeeForm, addressProof: e.target.files[0]})} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+
+                    {/* Driver Details & Document */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700">Driver Details</label>
+                      <input 
+                        type="text" 
+                        placeholder="Driver Name" 
+                        value={vendorRateCardForm.driverName} 
+                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverName: e.target.value})} 
+                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
+                      />
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Driving Licence Document</label>
+                        <input 
+                          type="file" 
+                          onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverLicenseDocument: e.target.files[0]})} 
+                          className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                        />
+                      </div>
                     </div>
-                    <button type="submit" className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition font-medium">Verify & Upload</button>
+
+                    <button type="submit" className="w-full bg-emerald-600 text-white py-2.5 px-4 rounded-md hover:bg-emerald-700 transition font-medium text-sm shadow-sm">Save Vendor Rate Card</button>
                   </form>
                 </div>
               </div>
@@ -1475,7 +1608,7 @@ const AdminDashboard = () => {
                       >
                         <option value="TEMPLATE_A">Route-Based Pricing (Point-to-Point)</option>
                         <option value="TEMPLATE_B">Store Hub / Zone Matrix Pricing</option>
-                        <option value="TEMPLATE_D">Dedicated Deployment Pricing</option>
+                        <option value="TEMPLATE_D">Fix Vehicle Rate</option>
                       </select>
                     </div>
                   </div>
@@ -1798,7 +1931,7 @@ const AdminDashboard = () => {
                       {/* Original Pricing Fields Card */}
                       <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Deployment Pricing Details</h4>
+                          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Fix Vehicle Rate Details</h4>
                           {editingRowIndex !== null && (
                             <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
                           )}
@@ -1988,13 +2121,13 @@ const AdminDashboard = () => {
 
                       <div className="flex justify-end mt-4 mb-6">
                         <button type="button" onClick={addOrUpdateRowTemplateD} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors shadow-md">
-                          {editingRowIndex !== null ? 'Update Deployment Row' : 'Add Deployment Row'}
+                          {editingRowIndex !== null ? 'Update Fix Vehicle Rate Row' : 'Add Fix Vehicle Rate Row'}
                         </button>
                       </div>
 
                       {/* Data Table */}
                       <div className="flex justify-between items-center mt-6 mb-2">
-                        <h4 className="text-md font-semibold text-slate-700">Dedicated Deployment Pricing Table</h4>
+                        <h4 className="text-md font-semibold text-slate-700">Fix Vehicle Rate Table</h4>
                         <button type="button" onClick={importFromRunSheets} className="bg-sky-600 hover:bg-sky-700 text-white font-medium py-1.5 px-4 rounded-lg text-sm shadow-sm flex items-center gap-1.5 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />

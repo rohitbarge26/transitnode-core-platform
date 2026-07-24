@@ -918,3 +918,53 @@ exports.deleteDailyRunSheet = async (req, res) => {
     res.status(500).json({ message: 'Server error deleting Daily Run Sheet' });
   }
 };
+
+exports.createVendorRateCard = async (req, res) => {
+  try {
+    const VendorRateCard = require('../models/NoSQL/VendorRateCard');
+    const { vendorName, vehicleType, baseRate, tollCharge, dcmCharge, totalRate, vehicleDetails, driverName } = req.body;
+
+    if (!vendorName || !vehicleType) {
+      return res.status(400).json({ message: 'Vendor Name and Vehicle Type are required.' });
+    }
+
+    const fileUrl = '/uploads/';
+    const vehicleDocumentUrl = req.files && req.files.vehicleDocument ? `${fileUrl}${req.files.vehicleDocument[0].filename}` : null;
+    const driverLicenseDocumentUrl = req.files && req.files.driverLicenseDocument ? `${fileUrl}${req.files.driverLicenseDocument[0].filename}` : null;
+
+    const computedTotal = Number(totalRate) || (Number(baseRate || 0) + Number(tollCharge || 0) + Number(dcmCharge || 0));
+
+    const vendorRateCard = await VendorRateCard.create({
+      tenantId: req.user.tenantId,
+      companyId: req.workspaceId,
+      vendorName,
+      vehicleType,
+      baseRate: Number(baseRate || 0),
+      tollCharge: Number(tollCharge || 0),
+      dcmCharge: Number(dcmCharge || 0),
+      totalRate: computedTotal,
+      vehicleDetails: vehicleDetails || '',
+      vehicleDocumentUrl,
+      driverName: driverName || '',
+      driverLicenseDocumentUrl,
+    });
+
+    res.status(201).json({ message: 'Vendor Rate Card created successfully!', vendorRateCard });
+  } catch (error) {
+    console.error('Error creating Vendor Rate Card:', error);
+    res.status(500).json({ message: 'Server error creating Vendor Rate Card' });
+  }
+};
+
+exports.getVendorRateCards = async (req, res) => {
+  try {
+    const VendorRateCard = require('../models/NoSQL/VendorRateCard');
+    const tenantId = req.user.tenantId;
+    const rateCards = await VendorRateCard.find({ tenantId }).sort({ createdAt: -1 });
+    res.status(200).json({ rateCards });
+  } catch (error) {
+    console.error('Error fetching Vendor Rate Cards:', error);
+    res.status(500).json({ message: 'Server error fetching Vendor Rate Cards' });
+  }
+};
+

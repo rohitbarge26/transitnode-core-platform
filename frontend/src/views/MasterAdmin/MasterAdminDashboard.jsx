@@ -62,7 +62,7 @@ const MasterAdminDashboard = () => {
     const token = localStorage.getItem('token');
     return {
       Authorization: `Bearer ${token}`,
-      'x-master-admin-key': process.env.REACT_APP_MASTER_KEY || 'transitnode-master-key'
+      'x-master-admin-key': process.env.REACT_APP_MASTER_KEY || 'c3cb4790ebc7043b5db97c106c88e5dc93f8c8717f8e90f5cc967f885d0d47eb'
     };
   };
 

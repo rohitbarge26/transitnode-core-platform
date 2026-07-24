@@ -11,10 +11,13 @@ export const TenantBrandingProvider = ({ children }) => {
   useEffect(() => {
     const initializeTenant = async () => {
       const hostname = window.location.hostname;
+      const subdomain = hostname.split('.')[0];
       
       const isMainDomain = 
         hostname === 'localhost' || 
         hostname === '127.0.0.1' || 
+        subdomain === 'masteradmin' ||
+        hostname.startsWith('masteradmin.') ||
         hostname === 'transitnode.in' || 
         hostname === 'www.transitnode.in' ||
         hostname === 'corematrix.in' ||
@@ -32,9 +35,6 @@ export const TenantBrandingProvider = ({ children }) => {
         return;
       }
 
-      // Extract leftmost subdomain token
-      const subdomain = hostname.split('.')[0];
-      
       if (!subdomain || subdomain === 'www') {
         setTenantState('MAIN_LANDING_PAGE');
         return;
