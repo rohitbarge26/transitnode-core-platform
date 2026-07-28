@@ -27,13 +27,16 @@ exports.registerTenant = async (req, res) => {
     const upperPlanTier = planTier ? planTier.toUpperCase() : 'TRIAL';
     const mappedPlanType = upperPlanTier === 'FREE' ? 'TRIAL' : upperPlanTier;
 
-    // Set 10 days expiry for trial, or 1 day (grace period/unpaid) for paid plans
+    // Set plan-based subscription license expiry
     const licenseExpiresAt = new Date();
     if (mappedPlanType === 'TRIAL') {
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 10);
-    } else {
-      // 1 day grace period for payment
-      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 1);
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 Days Trial
+    } else if (mappedPlanType === 'SILVER') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3); // 3 Years (36 Months)
+    } else if (mappedPlanType === 'PLATINUM') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5); // 5 Years (60 Months)
+    } else if (mappedPlanType === 'LIFETIME') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100); // Lifetime Access
     }
     
     // Generate the full login URL dynamically based on environment

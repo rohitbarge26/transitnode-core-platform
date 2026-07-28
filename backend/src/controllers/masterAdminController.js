@@ -100,7 +100,15 @@ exports.onboardManual = async (req, res) => {
     }
 
     const licenseExpiresAt = new Date();
-    licenseExpiresAt.setDate(licenseExpiresAt.getDate() + parseInt(licenseDurationDays, 10));
+    if (uppercasePlanType === 'TRIAL') {
+      licenseExpiresAt.setDate(licenseExpiresAt.getDate() + 14); // 14 Days Trial
+    } else if (uppercasePlanType === 'SILVER') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 3); // 3 Years (36 Months)
+    } else if (uppercasePlanType === 'PLATINUM') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 5); // 5 Years (60 Months)
+    } else if (uppercasePlanType === 'LIFETIME') {
+      licenseExpiresAt.setFullYear(licenseExpiresAt.getFullYear() + 100); // Lifetime Access
+    }
 
     const customSubdomain = companyName.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Math.floor(Math.random() * 10000);
     const reqHost = req.headers.host || '';
@@ -167,10 +175,27 @@ exports.dashboardSummary = async (req, res) => {
     await exports.purgeSpecifiedTenants();
     
     // 1. Total registered Tenants sorted by subscription tiers
-    // Auto-clean duplicate Sister Company entries matching primary tenant name
-    const allTenantsList = await Tenant.find({}, 'companyName');
+    // Auto-clean duplicate Sister Company entries and fix plan license expiries
+    const allTenantsList = await Tenant.find({});
     for (const t of allTenantsList) {
       await Company.deleteMany({ tenantId: t._id, companyName: t.companyName });
+
+      const baseDate = t.createdAt ? new Date(t.createdAt) : new Date();
+      const correctExpiry = new Date(baseDate);
+      if (t.planType === 'SILVER') {
+        correctExpiry.setFullYear(correctExpiry.getFullYear() + 3);
+      } else if (t.planType === 'PLATINUM') {
+        correctExpiry.setFullYear(correctExpiry.getFullYear() + 5);
+      } else if (t.planType === 'LIFETIME') {
+        correctExpiry.setFullYear(correctExpiry.getFullYear() + 100);
+      } else if (t.planType === 'TRIAL') {
+        correctExpiry.setDate(correctExpiry.getDate() + 14);
+      }
+      
+      if (!t.licenseExpiresAt || Math.abs(new Date(t.licenseExpiresAt) - correctExpiry) > 24 * 60 * 60 * 1000) {
+        t.licenseExpiresAt = correctExpiry;
+        await t.save();
+      }
     }
 
     const tenantsByTier = await Tenant.aggregate([
