@@ -1910,7 +1910,7 @@ const AdminDashboard = () => {
                             <div className="flex justify-between items-center mb-4">
                               <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Route Row' : 'Add Route Row'}</h4>
                               {editingRowIndex !== null && (
-                                <button type="button" onClick={cancelEditRow} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
+                                <button type="button" onClick={cancelEdit} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
                                   Cancel Edit
                                 </button>
                               )}
@@ -1967,7 +1967,7 @@ const AdminDashboard = () => {
                               </div>
                             </div>
 
-                            <button type="button" onClick={addOrUpdateTemplateARow} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
+                            <button type="button" onClick={addOrUpdateRowTemplateA} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
                               {editingRowIndex !== null ? 'Update Route Row' : 'Add Route to Table'}
                             </button>
                           </div>
@@ -2024,7 +2024,7 @@ const AdminDashboard = () => {
                             <div className="flex justify-between items-center mb-4">
                               <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Store Hub / Zone Row' : 'Add Store Hub / Zone Row'}</h4>
                               {editingRowIndex !== null && (
-                                <button type="button" onClick={cancelEditRow} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
+                                <button type="button" onClick={cancelEdit} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
                                   Cancel Edit
                                 </button>
                               )}
@@ -2084,7 +2084,7 @@ const AdminDashboard = () => {
                               </div>
                             </div>
 
-                            <button type="button" onClick={addOrUpdateTemplateBRow} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
+                            <button type="button" onClick={addOrUpdateRowTemplateB} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
                               {editingRowIndex !== null ? 'Update Zone Row' : 'Add Zone Row to Table'}
                             </button>
                           </div>
@@ -2139,7 +2139,7 @@ const AdminDashboard = () => {
                             <div className="flex justify-between items-center mb-4">
                               <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Fixed Vehicle Rate Line' : 'Add Fixed Vehicle Rate Line'}</h4>
                               {editingRowIndex !== null && (
-                                <button type="button" onClick={cancelEditRow} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
+                                <button type="button" onClick={cancelEdit} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
                                   Cancel Edit
                                 </button>
                               )}
@@ -2195,7 +2195,7 @@ const AdminDashboard = () => {
                               </div>
                             </div>
 
-                            <button type="button" onClick={addOrUpdateTemplateDRow} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
+                            <button type="button" onClick={addOrUpdateRowTemplateD} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
                               {editingRowIndex !== null ? 'Update Fixed Rate Line' : 'Add Fixed Rate Line'}
                             </button>
                           </div>
