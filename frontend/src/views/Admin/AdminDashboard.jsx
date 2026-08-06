@@ -68,6 +68,7 @@ const AdminDashboard = () => {
 
   // Forms State
   const [userForm, setUserForm] = useState({ name: '', email: '', mobileNumber: '', password: '', role: 'OPERATION_EXECUTIVE' });
+  const [managementSubTab, setManagementSubTab] = useState('USERS'); // 'USERS', 'VENDOR_RATES', 'CLIENT_RATES'
   const [selectedCompanyId, setSelectedCompanyId] = useState('MAIN');
   const [selectedSupplierId, setSelectedSupplierId] = useState('NONE');
   const [templateType, setTemplateType] = useState('TEMPLATE_A');
@@ -1383,986 +1384,880 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'MANAGEMENT' && (
-            <div className="space-y-8">
-              <h2 className="text-xl font-bold text-slate-800">Management Controls</h2>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* User Provisioning */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">Provision New User</h3>
-                  <form onSubmit={handleCreateUser} className="space-y-4" autoComplete="off">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                      <input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                      <input type="email" autoComplete="new-email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Mobile Number</label>
-                      <input type="text" value={userForm.mobileNumber} onChange={e => setUserForm({...userForm, mobileNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                      <input type="password" required autoComplete="new-password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-                      <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
-                        <option value="OPERATION_EXECUTIVE">Operation Executive</option>
-                        <option value="ACCOUNTANT">Accountant</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
-                    </div>
-                    <button type="submit" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">Create User</button>
-                  </form>
-                </div>
-
-                {/* Vendor Rate Card Form */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-800">Vendor Rate Card</h3>
-                    <span className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-full border border-indigo-100">Rate Setup</span>
-                  </div>
-                  <form onSubmit={handleCreateVendorRateCard} className="space-y-4">
-                    {/* Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Vendor Name</label>
-                      <input 
-                        type="text" 
-                        required 
-                        placeholder="Enter Vendor Name" 
-                        value={vendorRateCardForm.vendorName} 
-                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, vendorName: e.target.value})} 
-                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
-                      />
-                    </div>
-
-                    {/* Vehicle Type Dropdown */}
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle Type</label>
-                      <select 
-                        value={vendorRateCardForm.vehicleType} 
-                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleType: e.target.value})} 
-                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border bg-white text-sm"
-                      >
-                        {['14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', 'TATA Ace', 'Van (or Eeco)', '32-Ft MX Container', '32-Ft SXL Container', 'Other'].map(type => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Rate Section */}
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Rate Breakdown</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Toll Charge (₹)</label>
-                          <input 
-                            type="number" 
-                            placeholder="0" 
-                            value={vendorRateCardForm.tollCharge} 
-                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, tollCharge: e.target.value})} 
-                            className="w-full border-slate-300 rounded-md p-2 border text-sm bg-white" 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">DCM Charge (₹)</label>
-                          <input 
-                            type="number" 
-                            placeholder="0" 
-                            value={vendorRateCardForm.dcmCharge} 
-                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, dcmCharge: e.target.value})} 
-                            className="w-full border-slate-300 rounded-md p-2 border text-sm bg-white" 
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Total Rate (₹)</label>
-                        <input 
-                          type="number" 
-                          placeholder="Calculated automatically" 
-                          value={vendorRateCardForm.totalRate !== '' ? vendorRateCardForm.totalRate : (Number(vendorRateCardForm.tollCharge || 0) + Number(vendorRateCardForm.dcmCharge || 0))} 
-                          onChange={e => setVendorRateCardForm({...vendorRateCardForm, totalRate: e.target.value})} 
-                          className="w-full border-slate-300 rounded-md p-2 border text-sm font-semibold bg-white text-emerald-700" 
-                        />
-                      </div>
-                    </div>
-
-                    {/* Vehicle Details & Required Vehicle Documents */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">Vehicle Details</label>
-                      <input 
-                        type="text" 
-                        placeholder="Vehicle Details (e.g. MH-12-AB-1234)" 
-                        value={vendorRateCardForm.vehicleDetails} 
-                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleDetails: e.target.value})} 
-                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
-                      />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Registration Certificate (RC)</label>
-                          <input 
-                            type="file" 
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, rcDocument: e.target.files[0]})} 
-                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Vehicle Insurance Policy</label>
-                          <input 
-                            type="file" 
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, insuranceDocument: e.target.files[0]})} 
-                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Driver Details & Required Driver Documents */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">Driver Details</label>
-                      <input 
-                        type="text" 
-                        placeholder="Driver Name" 
-                        value={vendorRateCardForm.driverName} 
-                        onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverName: e.target.value})} 
-                        className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
-                      />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Commercial Driving Licence (DL)</label>
-                          <input 
-                            type="file" 
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverLicenseDocument: e.target.files[0]})} 
-                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Aadhaar Card / PAN Card</label>
-                          <input 
-                            type="file" 
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverIdDocument: e.target.files[0]})} 
-                            className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" className="w-full bg-emerald-600 text-white py-2.5 px-4 rounded-md hover:bg-emerald-700 transition font-medium text-sm shadow-sm">Save Vendor Rate Card</button>
-                  </form>
-                </div>
-              </div>
-
-              {/* Saved Vendor Rate Cards & Documents Vault Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+            <div className="space-y-6 animate-fade-in">
+              {/* Header & Sub-Tab Widget Selector */}
+              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800">Saved Vendor Rate Cards & Documents</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">View all vendor pricing cards and uploaded vehicle/driver compliance documents</p>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Admin & Compliance Controls</h2>
+                    <p className="text-sm text-slate-500 mt-1">Manage user provisioning, vendor rate cards, document vault, and client pricing matrices.</p>
                   </div>
-                  <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
-                    {vendorRateCards.length} Saved Cards
-                  </span>
                 </div>
 
-                {vendorRateCards.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-sm font-medium">
-                    No Vendor Rate Cards saved yet. Fill out the form above to add vendor rates and documents.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
-                          <th className="p-3">Vendor / Vehicle</th>
-                          <th className="p-3">Vehicle Reg & Docs</th>
-                          <th className="p-3">Driver Details & Docs</th>
-                          <th className="p-3">Rate Breakdown</th>
-                          <th className="p-3 text-right">Total Rate</th>
-                          <th className="p-3 text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {vendorRateCards.map(card => (
-                          <tr key={card._id} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 font-medium text-slate-900">
-                              <div className="font-bold text-slate-900">{card.vendorName}</div>
-                              <span className="inline-block bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded mt-1">
-                                {card.vehicleType}
-                              </span>
-                            </td>
+                {/* Tabbed Widget Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-1.5 bg-slate-100/80 rounded-xl border border-slate-200/60">
+                  <button
+                    type="button"
+                    onClick={() => setManagementSubTab('USERS')}
+                    className={`flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${
+                      managementSubTab === 'USERS'
+                        ? 'bg-white text-indigo-600 shadow-md shadow-slate-200/60 border border-slate-200/50 scale-[1.01]'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    }`}
+                  >
+                    <span className="text-lg">👥</span>
+                    <span>User Management</span>
+                    <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-extrabold ${
+                      managementSubTab === 'USERS' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {usersList.length}
+                    </span>
+                  </button>
 
-                            <td className="p-3 text-slate-700">
-                              <div className="font-semibold text-slate-800 mb-1">
-                                {card.vehicleDetails || 'N/A'}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {card.rcDocumentUrl ? (
-                                  <a
-                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.rcDocumentUrl}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
-                                  >
-                                    📄 RC Document
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">No RC</span>
-                                )}
+                  <button
+                    type="button"
+                    onClick={() => setManagementSubTab('VENDOR_RATES')}
+                    className={`flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${
+                      managementSubTab === 'VENDOR_RATES'
+                        ? 'bg-white text-emerald-600 shadow-md shadow-slate-200/60 border border-slate-200/50 scale-[1.01]'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    }`}
+                  >
+                    <span className="text-lg">🚚</span>
+                    <span>Vendor Rate Cards & Vault</span>
+                    <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-extrabold ${
+                      managementSubTab === 'VENDOR_RATES' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {vendorRateCards.length}
+                    </span>
+                  </button>
 
-                                {card.insuranceDocumentUrl ? (
-                                  <a
-                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.insuranceDocumentUrl}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
-                                  >
-                                    🛡️ Insurance
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">No Insurance</span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td className="p-3 text-slate-700">
-                              <div className="font-semibold text-slate-800 mb-1">
-                                {card.driverName || 'N/A'}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {card.driverLicenseDocumentUrl ? (
-                                  <a
-                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.driverLicenseDocumentUrl}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
-                                  >
-                                    🪪 Commercial DL
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">No DL</span>
-                                )}
-
-                                {card.driverIdDocumentUrl ? (
-                                  <a
-                                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.driverIdDocumentUrl}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
-                                  >
-                                    🆔 Aadhaar/PAN
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 italic">No ID</span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td className="p-3 text-slate-600 text-xs">
-                              <div>Base: ₹{card.baseRate || 0}</div>
-                              <div>Toll: ₹{card.tollCharge || 0} | DCM: ₹{card.dcmCharge || 0}</div>
-                            </td>
-
-                            <td className="p-3 text-right font-black text-slate-900 text-base">
-                              ₹{(card.totalRate || 0).toLocaleString('en-IN')}
-                            </td>
-
-                            <td className="p-3 text-center">
-                              <button
-                                onClick={() => handleDeleteVendorRateCard(card._id)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition"
-                                title="Delete Vendor Rate Card"
-                              >
-                                🗑️
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setManagementSubTab('CLIENT_RATES')}
+                    className={`flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${
+                      managementSubTab === 'CLIENT_RATES'
+                        ? 'bg-white text-blue-600 shadow-md shadow-slate-200/60 border border-slate-200/50 scale-[1.01]'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    }`}
+                  >
+                    <span className="text-lg">📊</span>
+                    <span>Client Rate Configurations</span>
+                    <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-extrabold ${
+                      managementSubTab === 'CLIENT_RATES' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      Matrix
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              {/* Rate Card Configuration */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-lg font-bold text-slate-800">Rate Card Configuration</h3>
-                  <p className="text-sm text-slate-500 mt-1">Configure client-specific pricing tables for automated billing workflows.</p>
-                </div>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Client / Company</label>
-                        <select 
-                          value={selectedCompanyId} 
-                          onChange={e => setSelectedCompanyId(e.target.value)} 
-                          className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
-                        >
-                          <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'} (Main HQ)</option>
-                          {workspaces.filter(ws => !ws.isMainTenant).map(ws => (
-                            <option key={ws._id} value={ws._id}>{ws.companyName}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Select Supplier</label>
-                        <select 
-                          value={selectedSupplierId} 
-                          onChange={e => setSelectedSupplierId(e.target.value)} 
-                          className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
-                        >
-                          <option value="NONE">-- No Supplier --</option>
-                          {suppliers.map(sup => (
-                            <option key={sup._id} value={sup._id}>{sup.supplierName}</option>
-                          ))}
-                        </select>
+              {/* SUB-TAB 1: USER MANAGEMENT */}
+              {managementSubTab === 'USERS' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  {/* User KPI Stats Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Users</div>
+                      <div className="text-2xl font-black text-slate-900 mt-1">{usersList.length}</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                      <div className="text-xs font-bold text-purple-600 uppercase tracking-wider">Admins</div>
+                      <div className="text-2xl font-black text-purple-900 mt-1">
+                        {usersList.filter(u => u.role === 'ADMIN').length}
                       </div>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Select Rate Card Template Type</label>
-                      <select 
-                        value={templateType} 
-                        onChange={e => handleTemplateTypeChange(e.target.value)} 
-                        className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
-                      >
-                        <option value="TEMPLATE_A">Route-Based Pricing (Point-to-Point)</option>
-                        <option value="TEMPLATE_B">Store Hub / Zone Matrix Pricing</option>
-                        <option value="TEMPLATE_D">Fix Vehicle Rate</option>
-                      </select>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                      <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">Accountants</div>
+                      <div className="text-2xl font-black text-blue-900 mt-1">
+                        {usersList.filter(u => u.role === 'ACCOUNTANT').length}
+                      </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                      <div className="text-xs font-bold text-green-600 uppercase tracking-wider">Ops Executives</div>
+                      <div className="text-2xl font-black text-green-900 mt-1">
+                        {usersList.filter(u => u.role === 'OPERATION_EXECUTIVE' || u.role === 'OPERATION').length}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Render Template A */}
-                  {templateType === 'TEMPLATE_A' && (
-                    <div className="space-y-4 pt-4 border-t border-slate-100">
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Route Row' : 'Add Route Row'}</h4>
-                          {editingRowIndex !== null && (
-                            <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">From (Origin)*</label>
-                            <input type="text" name="from" value={templateAForm.from} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 focus:border-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">To (Destination)*</label>
-                            <input type="text" name="to" value={templateAForm.to} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 focus:border-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Vehicle Type</label>
-                            <select name="vehicleType" value={templateAForm.vehicleType} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              {[
-                                'Van (or Eeco)', 
-                                'Mini Truck (Ace)', 
-                                'Pickup Truck', 
-                                'Truck (407)', 
-                                'Truck 14ft', 
-                                'Large Truck 17ft', 
-                                'Large Truck 19ft/20ft', 
-                                'Large Truck 22ft/24ft', 
-                                '32FT SXL', 
-                                '32FT MXL'
-                              ].map(v => (
-                                <option key={v} value={v}>{v}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Billing Type</label>
-                            <select name="billingType" value={templateAForm.billingType} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              {['Fixed', 'Per KM', 'Per Trip', 'Monthly', 'Adhoc'].map(b => (
-                                <option key={b} value={b}>{b}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Fixed KMS</label>
-                            <input type="number" min="0" name="fixedKms" value={templateAForm.fixedKms} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">12h Rate (₹)</label>
-                            <input type="number" min="0" name="rate12h" value={templateAForm.rate12h} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">24h Rate (₹)</label>
-                            <input type="number" min="0" name="rate24h" value={templateAForm.rate24h} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra KM (₹)</label>
-                            <input type="number" min="0" name="extraKmRate" value={templateAForm.extraKmRate} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Extra Hour (₹)</label>
-                            <input type="number" min="0" name="extraHourRate" value={templateAForm.extraHourRate} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Detention (₹)</label>
-                            <input type="number" min="0" name="detentionCharges" value={templateAForm.detentionCharges} onChange={handleTemplateAFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                        </div>
-                        <div className="mt-4 flex justify-end">
-                          <button type="button" onClick={addOrUpdateRowTemplateA} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
-                            {editingRowIndex !== null ? 'Update Row' : 'Add Row'}
-                          </button>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* User Provisioning Form (1 col) */}
+                    <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                      <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                        <span className="p-2 bg-indigo-50 text-indigo-600 rounded-lg text-base font-bold">👤</span>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900">Provision New User</h3>
+                          <p className="text-xs text-slate-500">Create access account for staff</p>
                         </div>
                       </div>
-                      
-                      <div className="flex justify-between items-center mt-6 mb-2">
-                        <h4 className="text-md font-semibold text-slate-700">Route-Based Pricing Table (Point-to-Point)</h4>
+                      <form onSubmit={handleCreateUser} className="space-y-4" autoComplete="off">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                          <input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                          <input type="email" autoComplete="new-email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Mobile Number</label>
+                          <input type="text" value={userForm.mobileNumber} onChange={e => setUserForm({...userForm, mobileNumber: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                          <input type="password" required autoComplete="new-password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                          <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 border bg-white">
+                            <option value="OPERATION_EXECUTIVE">Operation Executive</option>
+                            <option value="ACCOUNTANT">Accountant</option>
+                            <option value="ADMIN">Admin</option>
+                          </select>
+                        </div>
+                        <button type="submit" className="w-full bg-indigo-600 text-white py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition font-bold text-sm shadow-sm">Create User</button>
+                      </form>
+                    </div>
+
+                    {/* Current Users List Table (2 cols) */}
+                    <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                      <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900">Current Platform Users</h3>
+                          <p className="text-xs text-slate-500">All registered system users and assigned roles</p>
+                        </div>
+                        <span className="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full border border-slate-200">
+                          {usersList.length} Active Accounts
+                        </span>
                       </div>
-                      
-                      <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
-                        <table className="min-w-full divide-y divide-slate-200 text-sm">
-                          <thead className="bg-slate-50">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-slate-200">
+                          <thead>
                             <tr>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[120px]">From (Origin)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[120px]">To (Destination)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Vehicle Type</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Billing Type</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Fixed KMS</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">12h Rate (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">24h Rate (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Extra KM (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Extra Hour (₹)</th>
-                              <th className="px-3 py-3 text-left font-semibold text-slate-600">Detention (₹)</th>
-                              <th className="px-3 py-3 text-center font-semibold text-slate-600 w-24">Action</th>
+                              <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+                              <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
+                              <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                              <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-slate-100">
-                            {rows.map((row, idx) => (
-                              <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
-                                <td className="px-3 py-3 text-slate-700">{row.from}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.to}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.vehicleType}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.billingType}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.fixedKms || '-'}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.rate12h || '-'}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.rate24h || '-'}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.extraKmRate || '-'}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.extraHourRate || '-'}</td>
-                                <td className="px-3 py-3 text-slate-700">{row.detentionCharges || '-'}</td>
-                                <td className="px-3 py-3 text-center">
-                                  <div className="flex justify-center gap-2">
-                                    <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                      </svg>
-                                    </button>
-                                    <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </button>
-                                  </div>
+                          <tbody className="bg-white divide-y divide-slate-200">
+                            {usersList.map((usr) => (
+                              <tr key={usr._id} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{usr.name}</td>
+                                <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                  <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${usr.role === 'ADMIN' ? 'bg-purple-100 text-purple-800 border border-purple-200' : usr.role === 'ACCOUNTANT' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-green-100 text-green-800 border border-green-200'}`}>
+                                    {usr.role}
+                                  </span>
                                 </td>
+                                <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">{usr.email || '-'}</td>
+                                <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-600">{usr.mobileNumber || '-'}</td>
                               </tr>
                             ))}
-                            {rows.length === 0 && (
+                            {usersList.length === 0 && (
                               <tr>
-                                <td colSpan="11" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
-                                  No route configuration rows added.
-                                </td>
+                                <td colSpan="4" className="px-3 sm:px-4 md:px-6 py-8 text-center text-sm text-slate-400 font-medium">No platform users found</td>
                               </tr>
                             )}
                           </tbody>
                         </table>
                       </div>
                     </div>
-                  )}
+                  </div>
+                </div>
+              )}
 
-                  {/* Render Template B */}
-                  {templateType === 'TEMPLATE_B' && (
-                    <div className="space-y-4 pt-4 border-t border-slate-100">
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Store Hub Row' : 'Add Store Hub Row'}</h4>
-                          {editingRowIndex !== null && (
-                            <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {/* SUB-TAB 2: VENDOR RATE CARDS & VAULT */}
+              {managementSubTab === 'VENDOR_RATES' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Vendor Rate Card Form (1 col) */}
+                    <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                      <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-base font-bold">🚚</span>
                           <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Store Code*</label>
-                            <input type="text" name="storeCode" value={templateBForm.storeCode} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Store Name*</label>
-                            <input type="text" name="storeName" value={templateBForm.storeName} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Location</label>
-                            <input type="text" name="location" value={templateBForm.location} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">City</label>
-                            <input type="text" name="city" value={templateBForm.city} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">State</label>
-                            <input type="text" name="state" value={templateBForm.state} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Zone</label>
-                            <input type="text" name="zone" value={templateBForm.zone} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Ace Rate (₹)</label>
-                            <input type="number" min="0" name="tataAceRate" value={templateBForm.tataAceRate} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">407 Rate (₹)</label>
-                            <input type="number" min="0" name="tata407Rate" value={templateBForm.tata407Rate} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">14FT Rate (₹)</label>
-                            <input type="number" min="0" name="rate14ft" value={templateBForm.rate14ft} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">17FT Rate (₹)</label>
-                            <input type="number" min="0" name="rate17ft" value={templateBForm.rate17ft} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">20FT Rate (₹)</label>
-                            <input type="number" min="0" name="rate20ft" value={templateBForm.rate20ft} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 7 TON (₹)</label>
-                            <input type="number" min="0" name="rate32ft7ton" value={templateBForm.rate32ft7ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 9 TON (₹)</label>
-                            <input type="number" min="0" name="rate32ft9ton" value={templateBForm.rate32ft9ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 10 TON (₹)</label>
-                            <input type="number" min="0" name="rate32ft10ton" value={templateBForm.rate32ft10ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">32FT 15 TON (₹)</label>
-                            <input type="number" min="0" name="rate32ft15ton" value={templateBForm.rate32ft15ton} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Detention/d (₹)</label>
-                            <input type="number" min="0" name="detentionCostPerDay" value={templateBForm.detentionCostPerDay} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Local Pt (₹)</label>
-                            <input type="number" min="0" name="localPointCharges" value={templateBForm.localPointCharges} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1">Out-of-St (₹)</label>
-                            <input type="number" min="0" name="outOfStatePointCharges" value={templateBForm.outOfStatePointCharges} onChange={handleTemplateBFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
+                            <h3 className="text-base font-bold text-slate-900">Vendor Rate Card</h3>
+                            <p className="text-xs text-slate-500">Set rates & upload compliance documents</p>
                           </div>
                         </div>
-                        <div className="mt-4 flex justify-end">
-                          <button type="button" onClick={addOrUpdateRowTemplateB} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
-                            {editingRowIndex !== null ? 'Update Row' : 'Add Row'}
-                          </button>
-                        </div>
+                        <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-full border border-indigo-100">Rate Setup</span>
                       </div>
-                      
-                      <div className="flex justify-between items-center mt-6 mb-2">
-                        <h4 className="text-md font-semibold text-slate-700">Store Hub / Zone Matrix Pricing Table</h4>
-                      </div>
-                      
-                      <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
-                        <table className="min-w-full divide-y divide-slate-200 text-xs">
-                          <thead className="bg-slate-50">
-                            <tr>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Store Code</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Store Name</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Location</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">City</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">State</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Zone</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Ace Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">407 Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">14FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">17FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">20FT Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 7 TON</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 9 TON</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 10 TON</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">32FT 15 TON</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Detention/d</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Local Pt</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Out-of-St</th>
-                              <th className="px-2 py-3 text-center font-semibold text-slate-600 w-20">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-slate-100">
-                            {rows.map((row, idx) => (
-                              <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
-                                <td className="px-2 py-3 text-slate-700">{row.storeCode}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.storeName}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.location || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.city || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.state || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.zone || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.tataAceRate || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.tata407Rate || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate14ft || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate17ft || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate20ft || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate32ft7ton || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate32ft9ton || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate32ft10ton || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rate32ft15ton || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.detentionCostPerDay || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.localPointCharges || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.outOfStatePointCharges || '-'}</td>
-                                <td className="px-2 py-3 text-center">
-                                  <div className="flex justify-center gap-2">
-                                    <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                      </svg>
-                                    </button>
-                                    <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
+                      <form onSubmit={handleCreateVendorRateCard} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Vendor Name</label>
+                          <input 
+                            type="text" 
+                            required 
+                            placeholder="Enter Vendor Name" 
+                            value={vendorRateCardForm.vendorName} 
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, vendorName: e.target.value})} 
+                            className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle Type</label>
+                          <select 
+                            value={vendorRateCardForm.vehicleType} 
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleType: e.target.value})} 
+                            className="w-full border-slate-300 rounded-md shadow-sm p-2 border bg-white text-sm"
+                          >
+                            {['14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', 'TATA Ace', 'Van (or Eeco)', '32-Ft MX Container', '32-Ft SXL Container', 'Other'].map(type => (
+                              <option key={type} value={type}>{type}</option>
                             ))}
-                            {rows.length === 0 && (
-                              <tr>
-                                <td colSpan="20" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
-                                  No location grid rows added.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
+                          </select>
+                        </div>
+
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Rate Breakdown</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Toll Charge (₹)</label>
+                              <input 
+                                type="number" 
+                                placeholder="0" 
+                                value={vendorRateCardForm.tollCharge} 
+                                onChange={e => setVendorRateCardForm({...vendorRateCardForm, tollCharge: e.target.value})} 
+                                className="w-full border-slate-300 rounded-md p-2 border text-sm bg-white" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">DCM Charge (₹)</label>
+                              <input 
+                                type="number" 
+                                placeholder="0" 
+                                value={vendorRateCardForm.dcmCharge} 
+                                onChange={e => setVendorRateCardForm({...vendorRateCardForm, dcmCharge: e.target.value})} 
+                                className="w-full border-slate-300 rounded-md p-2 border text-sm bg-white" 
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Total Rate (₹)</label>
+                            <input 
+                              type="number" 
+                              placeholder="Calculated automatically" 
+                              value={vendorRateCardForm.totalRate !== '' ? vendorRateCardForm.totalRate : (Number(vendorRateCardForm.tollCharge || 0) + Number(vendorRateCardForm.dcmCharge || 0))} 
+                              onChange={e => setVendorRateCardForm({...vendorRateCardForm, totalRate: e.target.value})} 
+                              className="w-full border-slate-300 rounded-md p-2 border text-sm font-semibold bg-white text-emerald-700" 
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-slate-700">Vehicle Details & Documents</label>
+                          <input 
+                            type="text" 
+                            placeholder="Vehicle Reg No (e.g. MH-12-AB-1234)" 
+                            value={vendorRateCardForm.vehicleDetails} 
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, vehicleDetails: e.target.value})} 
+                            className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
+                          />
+                          <div className="grid grid-cols-1 gap-2 pt-1">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Registration Certificate (RC)</label>
+                              <input 
+                                type="file" 
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                onChange={e => setVendorRateCardForm({...vendorRateCardForm, rcDocument: e.target.files[0]})} 
+                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Vehicle Insurance Policy</label>
+                              <input 
+                                type="file" 
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                onChange={e => setVendorRateCardForm({...vendorRateCardForm, insuranceDocument: e.target.files[0]})} 
+                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-slate-700">Driver Details & Documents</label>
+                          <input 
+                            type="text" 
+                            placeholder="Driver Full Name" 
+                            value={vendorRateCardForm.driverName} 
+                            onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverName: e.target.value})} 
+                            className="w-full border-slate-300 rounded-md shadow-sm p-2 border text-sm" 
+                          />
+                          <div className="grid grid-cols-1 gap-2 pt-1">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Commercial Driving Licence (DL)</label>
+                              <input 
+                                type="file" 
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverLicenseDocument: e.target.files[0]})} 
+                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Aadhaar Card / PAN Card</label>
+                              <input 
+                                type="file" 
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                onChange={e => setVendorRateCardForm({...vendorRateCardForm, driverIdDocument: e.target.files[0]})} 
+                                className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <button type="submit" className="w-full bg-emerald-600 text-white py-2.5 px-4 rounded-lg hover:bg-emerald-700 transition font-bold text-sm shadow-sm">Save Vendor Rate Card</button>
+                      </form>
                     </div>
-                  )}
 
-                  {/* Render Template D */}
-                  {templateType === 'TEMPLATE_D' && (
-                    <div className="space-y-6 pt-4 border-t border-slate-100">
-                      
-                      {/* Original Pricing Fields Card */}
-                      <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Fix Vehicle Rate Details</h4>
-                          {editingRowIndex !== null && (
-                            <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">Cancel Edit</button>
-                          )}
+                    {/* Saved Vendor Rate Cards & Documents Vault Table (2 cols) */}
+                    <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900">Saved Vendor Rate Cards & Compliance Vault</h3>
+                          <p className="text-xs text-slate-500">View vendor rates & verified vehicle/driver certificates</p>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">BU Vertical</label>
-                            <input type="text" name="buVertical" value={templateDForm.buVertical} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Rate Type</label>
-                            <select name="rateType" value={templateDForm.rateType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              <option value="Regular">Regular</option>
-                              <option value="Adhoc">Adhoc</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Origin*</label>
-                            <input type="text" name="origin" value={templateDForm.origin} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Fuel Rate</label>
-                            <input type="number" min="0" step="0.01" name="fuelRate" value={templateDForm.fuelRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Agreed Days</label>
-                            <input type="number" min="0" name="agreedDays" value={templateDForm.agreedDays} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Deployment Hr</label>
-                            <input type="number" min="0" name="deploymentHour" value={templateDForm.deploymentHour} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Fix km</label>
-                            <input type="number" min="0" name="fixKm" value={templateDForm.fixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Rate at Fix km</label>
-                            <input type="number" min="0" name="rateAtFixKm" value={templateDForm.rateAtFixKm} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Extra km rate</label>
-                            <input type="number" min="0" step="0.01" name="extraKmRate" value={templateDForm.extraKmRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Extra hour rate</label>
-                            <input type="number" min="0" name="extraHourRate" value={templateDForm.extraHourRate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Start Effect. Date</label>
-                            <input type="date" name="startEffectiveDate" value={templateDForm.startEffectiveDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Expiry Date</label>
-                            <input type="date" name="expiryDate" value={templateDForm.expiryDate} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                        </div>
+                        <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100">
+                          {vendorRateCards.length} Saved Cards
+                        </span>
                       </div>
 
-                      {/* Trip & Operational Details Card */}
-                      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
-                          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Trip & Operational Details</h4>
+                      {vendorRateCards.length === 0 ? (
+                        <div className="text-center py-12 text-slate-400 text-sm font-medium bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                          No Vendor Rate Cards saved yet. Fill out the form to add vendor rates and documents.
                         </div>
-                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Date</label>
-                            <input type="date" name="date" value={templateDForm.date} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Source Hub Name</label>
-                            <input type="text" name="sourceHubName" placeholder="e.g. Bhiwandi Hub" value={templateDForm.sourceHubName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Client Name</label>
-                            <select name="clientName" value={templateDForm.clientName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              <option value="">-- Select Client --</option>
-                              {workspaces.map(ws => <option key={ws._id} value={ws.companyName}>{ws.companyName}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Supplier Name</label>
-                            <select name="supplierName" value={templateDForm.supplierName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              <option value="">-- Select Supplier --</option>
-                              {suppliers.map(sup => <option key={sup._id} value={sup.supplierName}>{sup.supplierName}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Movement Type</label>
-                            <input type="text" name="movementType" placeholder="e.g. Linehaul, First Mile" value={templateDForm.movementType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vehicle Number</label>
-                            <input type="text" name="vehicleNumber" placeholder="MH04XX1234" value={templateDForm.vehicleNumber} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vehicle Type</label>
-                            <select name="vehicleType" value={templateDForm.vehicleType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              {[
-                                'Van (or Eeco)', 
-                                'Mini Truck (Ace)', 
-                                'Pickup Truck', 
-                                'Truck (407)', 
-                                'Truck 14ft', 
-                                'Large Truck 17ft', 
-                                'Large Truck 19ft/20ft', 
-                                'Large Truck 22ft/24ft', 
-                                '32FT SXL', 
-                                '32FT MXL'
-                              ].map(v => (
-                                <option key={v} value={v}>{v}</option>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                              <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                                <th className="p-3">Vendor / Vehicle</th>
+                                <th className="p-3">Vehicle Reg & Docs</th>
+                                <th className="p-3">Driver Details & Docs</th>
+                                <th className="p-3">Rate Breakdown</th>
+                                <th className="p-3 text-right">Total Rate</th>
+                                <th className="p-3 text-center">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {vendorRateCards.map(card => (
+                                <tr key={card._id} className="hover:bg-slate-50 transition-colors">
+                                  <td className="p-3 font-medium text-slate-900">
+                                    <div className="font-bold text-slate-900">{card.vendorName}</div>
+                                    <span className="inline-block bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded mt-1 border border-slate-200">
+                                      {card.vehicleType}
+                                    </span>
+                                  </td>
+
+                                  <td className="p-3 text-slate-700">
+                                    <div className="font-semibold text-slate-800 mb-1">
+                                      {card.vehicleDetails || 'N/A'}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                      {card.rcDocumentUrl ? (
+                                        <a
+                                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.rcDocumentUrl}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                        >
+                                          📄 RC
+                                        </a>
+                                      ) : (
+                                        <span className="text-[10px] text-slate-400 italic">No RC</span>
+                                      )}
+
+                                      {card.insuranceDocumentUrl ? (
+                                        <a
+                                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.insuranceDocumentUrl}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                        >
+                                          🛡️ Insurance
+                                        </a>
+                                      ) : (
+                                        <span className="text-[10px] text-slate-400 italic">No Insurance</span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  <td className="p-3 text-slate-700">
+                                    <div className="font-semibold text-slate-800 mb-1">
+                                      {card.driverName || 'N/A'}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                      {card.driverLicenseDocumentUrl ? (
+                                        <a
+                                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.driverLicenseDocumentUrl}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                        >
+                                          🪪 Commercial DL
+                                        </a>
+                                      ) : (
+                                        <span className="text-[10px] text-slate-400 italic">No DL</span>
+                                      )}
+
+                                      {card.driverIdDocumentUrl ? (
+                                        <a
+                                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}${card.driverIdDocumentUrl}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded text-[11px] font-semibold transition"
+                                        >
+                                          🆔 Aadhaar/PAN
+                                        </a>
+                                      ) : (
+                                        <span className="text-[10px] text-slate-400 italic">No ID</span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  <td className="p-3 text-slate-600 text-xs">
+                                    <div>Base: ₹{card.baseRate || 0}</div>
+                                    <div>Toll: ₹{card.tollCharge || 0} | DCM: ₹{card.dcmCharge || 0}</div>
+                                  </td>
+
+                                  <td className="p-3 text-right font-black text-slate-900 text-base">
+                                    ₹{(card.totalRate || 0).toLocaleString('en-IN')}
+                                  </td>
+
+                                  <td className="p-3 text-center">
+                                    <button
+                                      onClick={() => handleDeleteVendorRateCard(card._id)}
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition"
+                                      title="Delete Vendor Rate Card"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </td>
+                                </tr>
                               ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Parent Vehicle No (Optional)</label>
-                            <input type="text" name="parentVehicleNo" placeholder="IF ATTACHED" value={templateDForm.parentVehicleNo} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vendor Name (Optional)</label>
-                            <input type="text" name="vendorName" placeholder="Vendor Code or Name" value={templateDForm.vendorName} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Vehicle Ownership</label>
-                            <select name="vehicleOwnership" value={templateDForm.vehicleOwnership} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              <option value="Adhoc">Adhoc</option>
-                              <option value="Dedicated">Dedicated</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Driver Type</label>
-                            <select name="driverType" value={templateDForm.driverType} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-indigo-500 bg-white">
-                              <option value="Contract / Vendor Driver">Contract / Vendor Driver</option>
-                              <option value="Company Driver">Company Driver</option>
-                            </select>
-                          </div>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 3: CLIENT RATE CONFIGURATIONS */}
+              {managementSubTab === 'CLIENT_RATES' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 space-y-6">
+                    <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800">Client Rate Card Matrix Configuration</h3>
+                        <p className="text-sm text-slate-500 mt-1">Configure client-specific pricing tables for automated billing workflows.</p>
+                      </div>
+                      <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full border border-blue-100">
+                        {templateType === 'TEMPLATE_A' ? 'Point-to-Point Route Pricing' : templateType === 'TEMPLATE_B' ? 'Store Hub / Zone Matrix' : 'Fixed Vehicle Rate'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/80 p-4 rounded-xl border border-slate-200/60">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">1. Select Client / Company</label>
+                          <select 
+                            value={selectedCompanyId} 
+                            onChange={e => setSelectedCompanyId(e.target.value)} 
+                            className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                          >
+                            <option value="MAIN">{subscriptionDetails?.companyName || 'Primary Workspace'} (Main HQ)</option>
+                            {workspaces.filter(ws => !ws.isMainTenant).map(ws => (
+                              <option key={ws._id} value={ws._id}>{ws.companyName}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">2. Select Supplier</label>
+                          <select 
+                            value={selectedSupplierId} 
+                            onChange={e => setSelectedSupplierId(e.target.value)} 
+                            className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                          >
+                            <option value="NONE">-- No Supplier --</option>
+                            {suppliers.map(sup => (
+                              <option key={sup._id} value={sup._id}>{sup.supplierName}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">3. Rate Card Template Type</label>
+                          <select 
+                            value={templateType} 
+                            onChange={e => handleTemplateTypeChange(e.target.value)} 
+                            className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-3 border bg-white font-medium text-slate-800"
+                          >
+                            <option value="TEMPLATE_A">Route-Based Pricing (Point-to-Point)</option>
+                            <option value="TEMPLATE_B">Store Hub / Zone Matrix Pricing</option>
+                            <option value="TEMPLATE_D">Fix Vehicle Rate</option>
+                          </select>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Odometer Log Card */}
-                        <div className="bg-sky-50/50 rounded-xl border border-sky-100 p-5 shadow-sm">
-                          <h4 className="text-sm font-bold text-sky-900 uppercase tracking-wide mb-4">Odometer Log</h4>
-                          <div className="grid grid-cols-2 gap-4 mb-5">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-1">Start Odometer (Meters/KM)</label>
-                              <input type="number" name="startOdometer" min="0" value={templateDForm.startOdometer} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-sky-500" />
+                      {/* Render Template A */}
+                      {templateType === 'TEMPLATE_A' && (
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex justify-between items-center mb-4">
+                              <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Route Row' : 'Add Route Row'}</h4>
+                              {editingRowIndex !== null && (
+                                <button type="button" onClick={cancelEditRow} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
+                                  Cancel Edit
+                                </button>
+                              )}
                             </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-1">End Odometer (Meters/KM)</label>
-                              <input type="number" name="endOdometer" min="0" value={templateDForm.endOdometer} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-sky-500" />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">From Origin</label>
+                                <input type="text" placeholder="e.g. Mumbai" value={templateAForm.from} onChange={e => setTemplateAForm({...templateAForm, from: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">To Destination</label>
+                                <input type="text" placeholder="e.g. Pune" value={templateAForm.to} onChange={e => setTemplateAForm({...templateAForm, to: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Vehicle Type</label>
+                                <select value={templateAForm.vehicleType} onChange={e => setTemplateAForm({...templateAForm, vehicleType: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border bg-white text-sm">
+                                  {['Van (or Eeco)', 'TATA Ace', '14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', '32-Ft MX Container', '32-Ft SXL Container'].map(v => (
+                                    <option key={v} value={v}>{v}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Billing Type</label>
+                                <select value={templateAForm.billingType} onChange={e => setTemplateAForm({...templateAForm, billingType: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border bg-white text-sm">
+                                  <option value="Fixed">Fixed Rate</option>
+                                  <option value="Per KM">Per KM</option>
+                                  <option value="Per Ton">Per Ton</option>
+                                  <option value="Package">Package</option>
+                                </select>
+                              </div>
                             </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Fixed Kms</label>
+                                <input type="number" placeholder="80" value={templateAForm.fixedKms} onChange={e => setTemplateAForm({...templateAForm, fixedKms: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Rate 12h (₹)</label>
+                                <input type="number" placeholder="2500" value={templateAForm.rate12h} onChange={e => setTemplateAForm({...templateAForm, rate12h: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Rate 24h (₹)</label>
+                                <input type="number" placeholder="4000" value={templateAForm.rate24h} onChange={e => setTemplateAForm({...templateAForm, rate24h: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Extra KM Rate (₹)</label>
+                                <input type="number" placeholder="18" value={templateAForm.extraKmRate} onChange={e => setTemplateAForm({...templateAForm, extraKmRate: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Extra Hour Rate (₹)</label>
+                                <input type="number" placeholder="150" value={templateAForm.extraHourRate} onChange={e => setTemplateAForm({...templateAForm, extraHourRate: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                            </div>
+
+                            <button type="button" onClick={addOrUpdateTemplateARow} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
+                              {editingRowIndex !== null ? 'Update Route Row' : 'Add Route to Table'}
+                            </button>
                           </div>
-                          <div className="bg-sky-100/70 p-3 rounded-lg flex justify-between items-center font-bold text-sky-900">
-                            <span>Total Distance Travelled:</span>
-                            <span className="text-lg">
-                              {Math.max(0, (parseFloat(templateDForm.endOdometer) || 0) - (parseFloat(templateDForm.startOdometer) || 0))} units
-                            </span>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse border border-slate-200 text-xs sm:text-sm">
+                              <thead className="bg-slate-100 font-semibold text-slate-700">
+                                <tr>
+                                  <th className="p-2 border">From</th>
+                                  <th className="p-2 border">To</th>
+                                  <th className="p-2 border">Vehicle</th>
+                                  <th className="p-2 border">Billing Type</th>
+                                  <th className="p-2 border">Fixed KM</th>
+                                  <th className="p-2 border">12h Rate</th>
+                                  <th className="p-2 border">24h Rate</th>
+                                  <th className="p-2 border">Extra KM</th>
+                                  <th className="p-2 border">Extra Hr</th>
+                                  <th className="p-2 border text-center">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, idx) => (
+                                  <tr key={idx} className="hover:bg-slate-50 border-b">
+                                    <td className="p-2 border">{row.from}</td>
+                                    <td className="p-2 border">{row.to}</td>
+                                    <td className="p-2 border">{row.vehicleType}</td>
+                                    <td className="p-2 border">{row.billingType}</td>
+                                    <td className="p-2 border">{row.fixedKms}</td>
+                                    <td className="p-2 border font-medium text-slate-800">₹{row.rate12h}</td>
+                                    <td className="p-2 border font-medium text-slate-800">₹{row.rate24h}</td>
+                                    <td className="p-2 border">₹{row.extraKmRate}</td>
+                                    <td className="p-2 border">₹{row.extraHourRate}</td>
+                                    <td className="p-2 border text-center space-x-2">
+                                      <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:underline">Edit</button>
+                                      <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:underline">Remove</button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {rows.length === 0 && (
+                                  <tr>
+                                    <td colSpan="10" className="p-4 text-center text-slate-400">No route rows configured. Use the form above to add pricing lines.</td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
+                      )}
 
-                        {/* Vendor Billing & Charges Card */}
-                        <div className="bg-emerald-50/50 rounded-xl border border-emerald-100 p-5 shadow-sm">
-                          <h4 className="text-sm font-bold text-emerald-900 uppercase tracking-wide mb-4">Vendor Billing & Charges</h4>
-                          <div className="grid grid-cols-2 gap-4 mb-5">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-1">Freight (₹)</label>
-                              <input type="number" name="freight" min="0" value={templateDForm.freight} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-emerald-500" />
+                      {/* Render Template B */}
+                      {templateType === 'TEMPLATE_B' && (
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex justify-between items-center mb-4">
+                              <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Store Hub / Zone Row' : 'Add Store Hub / Zone Row'}</h4>
+                              {editingRowIndex !== null && (
+                                <button type="button" onClick={cancelEditRow} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
+                                  Cancel Edit
+                                </button>
+                              )}
                             </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-1">DCM Charges (₹)</label>
-                              <input type="number" name="dcmCharges" min="0" value={templateDForm.dcmCharges} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-emerald-500" />
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Store Code</label>
+                                <input type="text" placeholder="ST-101" value={templateBForm.storeCode} onChange={e => setTemplateBForm({...templateBForm, storeCode: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Store Name</label>
+                                <input type="text" placeholder="Andheri Hub" value={templateBForm.storeName} onChange={e => setTemplateBForm({...templateBForm, storeName: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Location / Address</label>
+                                <input type="text" placeholder="MIDC Zone" value={templateBForm.location} onChange={e => setTemplateBForm({...templateBForm, location: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">City</label>
+                                <input type="text" placeholder="Mumbai" value={templateBForm.city} onChange={e => setTemplateBForm({...templateBForm, city: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">State</label>
+                                <input type="text" placeholder="Maharashtra" value={templateBForm.state} onChange={e => setTemplateBForm({...templateBForm, state: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Zone</label>
+                                <input type="text" placeholder="Zone-1" value={templateBForm.zone} onChange={e => setTemplateBForm({...templateBForm, zone: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
                             </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-600 mb-1">Toll Amount (₹)</label>
-                              <input type="number" name="tollAmount" min="0" value={templateDForm.tollAmount} onChange={handleTemplateDFormChange} className="w-full border-slate-300 rounded-md p-2 text-sm border focus:ring-emerald-500" />
+
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">TATA Ace Rate (₹)</label>
+                                <input type="number" placeholder="1200" value={templateBForm.tataAceRate} onChange={e => setTemplateBForm({...templateBForm, tataAceRate: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">TATA 407 Rate (₹)</label>
+                                <input type="number" placeholder="2200" value={templateBForm.tata407Rate} onChange={e => setTemplateBForm({...templateBForm, tata407Rate: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">14-Ft Rate (₹)</label>
+                                <input type="number" placeholder="3200" value={templateBForm.rate14ft} onChange={e => setTemplateBForm({...templateBForm, rate14ft: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">17-Ft Rate (₹)</label>
+                                <input type="number" placeholder="3800" value={templateBForm.rate17ft} onChange={e => setTemplateBForm({...templateBForm, rate17ft: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">20-Ft Rate (₹)</label>
+                                <input type="number" placeholder="4500" value={templateBForm.rate20ft} onChange={e => setTemplateBForm({...templateBForm, rate20ft: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">32-Ft MX Rate (₹)</label>
+                                <input type="number" placeholder="6500" value={templateBForm.rate32ft7ton} onChange={e => setTemplateBForm({...templateBForm, rate32ft7ton: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
                             </div>
+
+                            <button type="button" onClick={addOrUpdateTemplateBRow} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
+                              {editingRowIndex !== null ? 'Update Zone Row' : 'Add Zone Row to Table'}
+                            </button>
                           </div>
-                          <div className="bg-emerald-200/50 p-3 rounded-lg flex justify-between items-center font-bold text-emerald-900">
-                            <span>Total Payout Amount:</span>
-                            <span className="text-xl">
-                              ₹{(parseFloat(templateDForm.freight) || 0) + (parseFloat(templateDForm.dcmCharges) || 0) + (parseFloat(templateDForm.tollAmount) || 0)}
-                            </span>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse border border-slate-200 text-xs sm:text-sm">
+                              <thead className="bg-slate-100 font-semibold text-slate-700">
+                                <tr>
+                                  <th className="p-2 border">Store Code</th>
+                                  <th className="p-2 border">Store Name</th>
+                                  <th className="p-2 border">Location</th>
+                                  <th className="p-2 border">City</th>
+                                  <th className="p-2 border">Zone</th>
+                                  <th className="p-2 border">Ace Rate</th>
+                                  <th className="p-2 border">14FT Rate</th>
+                                  <th className="p-2 border">32FT Rate</th>
+                                  <th className="p-2 border text-center">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, idx) => (
+                                  <tr key={idx} className="hover:bg-slate-50 border-b">
+                                    <td className="p-2 border font-medium text-slate-800">{row.storeCode}</td>
+                                    <td className="p-2 border">{row.storeName}</td>
+                                    <td className="p-2 border">{row.location}</td>
+                                    <td className="p-2 border">{row.city}</td>
+                                    <td className="p-2 border">{row.zone}</td>
+                                    <td className="p-2 border font-medium text-slate-800">₹{row.tataAceRate}</td>
+                                    <td className="p-2 border font-medium text-slate-800">₹{row.rate14ft}</td>
+                                    <td className="p-2 border font-medium text-slate-800">₹{row.rate32ft7ton}</td>
+                                    <td className="p-2 border text-center space-x-2">
+                                      <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:underline">Edit</button>
+                                      <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:underline">Remove</button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {rows.length === 0 && (
+                                  <tr>
+                                    <td colSpan="9" className="p-4 text-center text-slate-400">No store hub / zone rows configured. Use the form above to add pricing lines.</td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      <div className="flex justify-end mt-4 mb-6">
-                        <button type="button" onClick={addOrUpdateRowTemplateD} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors shadow-md">
-                          {editingRowIndex !== null ? 'Update Fix Vehicle Rate Row' : 'Add Fix Vehicle Rate Row'}
+                      {/* Render Template D */}
+                      {templateType === 'TEMPLATE_D' && (
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex justify-between items-center mb-4">
+                              <h4 className="text-md font-semibold text-slate-700">{editingRowIndex !== null ? 'Edit Fixed Vehicle Rate Line' : 'Add Fixed Vehicle Rate Line'}</h4>
+                              {editingRowIndex !== null && (
+                                <button type="button" onClick={cancelEditRow} className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded">
+                                  Cancel Edit
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">BU / Vertical</label>
+                                <input type="text" placeholder="e.g. Retail Logistics" value={templateDForm.buVertical} onChange={e => setTemplateDForm({...templateDForm, buVertical: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Rate Type</label>
+                                <select value={templateDForm.rateType} onChange={e => setTemplateDForm({...templateDForm, rateType: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border bg-white text-sm">
+                                  <option value="Regular">Regular</option>
+                                  <option value="Adhoc">Adhoc</option>
+                                  <option value="Seasonal">Seasonal</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Origin / Hub</label>
+                                <input type="text" placeholder="e.g. Bhiwandi Hub" value={templateDForm.origin} onChange={e => setTemplateDForm({...templateDForm, origin: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Vehicle Type</label>
+                                <select value={templateDForm.vehicleType} onChange={e => setTemplateDForm({...templateDForm, vehicleType: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border bg-white text-sm">
+                                  {['TATA Ace', 'Van (or Eeco)', '14-Ft Container', '19-Ft Container', '22-Ft Open', 'Pickup', 'Trailer', '32-Ft MX Container', '32-Ft SXL Container'].map(v => (
+                                    <option key={v} value={v}>{v}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Fixed KM Allowance</label>
+                                <input type="number" placeholder="1500" value={templateDForm.fixKm} onChange={e => setTemplateDForm({...templateDForm, fixKm: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Rate at Fixed KM (₹)</label>
+                                <input type="number" placeholder="45000" value={templateDForm.rateAtFixKm} onChange={e => setTemplateDForm({...templateDForm, rateAtFixKm: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm font-semibold text-emerald-700" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Extra KM Rate (₹)</label>
+                                <input type="number" placeholder="16" value={templateDForm.extraKmRate} onChange={e => setTemplateDForm({...templateDForm, extraKmRate: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Extra Hour Rate (₹)</label>
+                                <input type="number" placeholder="120" value={templateDForm.extraHourRate} onChange={e => setTemplateDForm({...templateDForm, extraHourRate: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Agreed Days / Month</label>
+                                <input type="number" placeholder="26" value={templateDForm.agreedDays} onChange={e => setTemplateDForm({...templateDForm, agreedDays: e.target.value})} className="w-full border-slate-300 rounded-md p-2 border text-sm" />
+                              </div>
+                            </div>
+
+                            <button type="button" onClick={addOrUpdateTemplateDRow} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded text-sm transition">
+                              {editingRowIndex !== null ? 'Update Fixed Rate Line' : 'Add Fixed Rate Line'}
+                            </button>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse border border-slate-200 text-xs sm:text-sm">
+                              <thead className="bg-slate-100 font-semibold text-slate-700">
+                                <tr>
+                                  <th className="p-2 border">BU / Vertical</th>
+                                  <th className="p-2 border">Rate Type</th>
+                                  <th className="p-2 border">Origin</th>
+                                  <th className="p-2 border">Vehicle Type</th>
+                                  <th className="p-2 border">Fix KM</th>
+                                  <th className="p-2 border">Rate at Fix KM</th>
+                                  <th className="p-2 border">Extra KM</th>
+                                  <th className="p-2 border">Extra Hr</th>
+                                  <th className="p-2 border text-center">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, idx) => (
+                                  <tr key={idx} className="hover:bg-slate-50 border-b">
+                                    <td className="p-2 border font-medium text-slate-800">{row.buVertical}</td>
+                                    <td className="p-2 border">{row.rateType}</td>
+                                    <td className="p-2 border">{row.origin}</td>
+                                    <td className="p-2 border">{row.vehicleType}</td>
+                                    <td className="p-2 border">{row.fixKm}</td>
+                                    <td className="p-2 border font-bold text-emerald-700">₹{row.rateAtFixKm}</td>
+                                    <td className="p-2 border">₹{row.extraKmRate}</td>
+                                    <td className="p-2 border">₹{row.extraHourRate}</td>
+                                    <td className="p-2 border text-center space-x-2">
+                                      <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:underline">Edit</button>
+                                      <button type="button" onClick={() => removeRow(idx)} className="text-red-600 hover:underline">Remove</button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {rows.length === 0 && (
+                                  <tr>
+                                    <td colSpan="9" className="p-4 text-center text-slate-400">No fixed vehicle rate lines configured. Use the form above to add pricing lines.</td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Save Rate Card Configuration Button */}
+                      <div className="pt-4 border-t border-slate-200 flex justify-end">
+                        <button 
+                          type="button" 
+                          onClick={handleSaveRateCard} 
+                          disabled={globalLoading} 
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base py-3 px-8 rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {globalLoading ? 'Saving Rate Card Matrix...' : '💾 Save Rate Card Matrix'}
                         </button>
                       </div>
-
-                      {/* Data Table */}
-                      <div className="mt-6 mb-2">
-                        <h4 className="text-md font-semibold text-slate-700">Fix Vehicle Rate Table</h4>
-                      </div>
-                      <div className="overflow-x-auto border border-slate-150 rounded-xl max-w-full">
-                        <table className="min-w-full divide-y divide-slate-200 text-xs">
-                          <thead className="bg-slate-50">
-                            <tr>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">BU Vertical</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Rate Type</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Origin</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Fuel Rate</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Agreed Days</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Dep. Hr</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Fix km</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Rate (Fix km)</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Date</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Source Hub</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Vehicle Type</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Vehicle No</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Distance</th>
-                              <th className="px-2 py-3 text-left font-semibold text-slate-600">Payout</th>
-                              <th className="px-2 py-3 text-center font-semibold text-slate-600 w-20">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-slate-100">
-                            {rows.map((row, idx) => (
-                              <tr key={idx} className={`hover:bg-slate-50/50 ${editingRowIndex === idx ? 'bg-indigo-50/30' : ''}`}>
-                                <td className="px-2 py-3 text-slate-700">{row.buVertical || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rateType || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.origin || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.fuelRate || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.agreedDays || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.deploymentHour || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.fixKm || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.rateAtFixKm || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.date || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.sourceHubName || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.vehicleType || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.vehicleNumber || '-'}</td>
-                                <td className="px-2 py-3 text-slate-700">{row.totalDistance || '0'}</td>
-                                <td className="px-2 py-3 text-slate-700 font-semibold text-emerald-700">₹{row.totalPayoutAmount || '0'}</td>
-                                <td className="px-2 py-3 text-center">
-                                  <div className="flex justify-center gap-2">
-                                    <button type="button" onClick={() => editRow(idx)} className="text-indigo-600 hover:text-indigo-800 p-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                      </svg>
-                                    </button>
-                                    <button type="button" onClick={() => removeRow(idx)} className="text-rose-600 hover:text-rose-800 p-1">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                            {rows.length === 0 && (
-                              <tr>
-                                <td colSpan="15" className="px-4 py-4 sm:py-6 md:py-8 text-center text-slate-400 font-medium bg-slate-50/50">
-                                  No deployment records added.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
                     </div>
-                  )}
-
                   </div>
-              </div>
-              
-              {/* Users List Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 sm:p-4 md:p-6 mt-8">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Current Users</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200">
-                    <thead>
-                      <tr>
-                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
-                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
-                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
-                        <th className="px-3 sm:px-4 md:px-6 py-3 bg-slate-50 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Mobile</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                      {usersList.map((usr) => (
-                        <tr key={usr._id}>
-                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{usr.name}</td>
-                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${usr.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : usr.role === 'ACCOUNTANT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                              {usr.role}
-                            </span>
-                          </td>
-                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.email || '-'}</td>
-                          <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-slate-500">{usr.mobileNumber || '-'}</td>
-                        </tr>
-                      ))}
-                      {usersList.length === 0 && (
-                        <tr>
-                          <td colSpan="4" className="px-3 sm:px-4 md:px-6 py-4 text-center text-sm text-slate-500">No users found</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
