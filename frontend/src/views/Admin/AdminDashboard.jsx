@@ -2247,7 +2247,7 @@ const AdminDashboard = () => {
                       <div className="pt-4 border-t border-slate-200 flex justify-end">
                         <button 
                           type="button" 
-                          onClick={handleSaveRateCard} 
+                          onClick={() => saveRatesToBackend(rows)} 
                           disabled={globalLoading} 
                           className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base py-3 px-8 rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-2"
                         >

@@ -53,8 +53,10 @@ const getWorkspaces = async (req, res) => {
     const tenant = await Tenant.findById(tenantId);
     let workspaces = await Company.find({ tenantId });
     
-    // Convert Mongoose docs to objects
-    workspaces = workspaces.map(w => w.toObject());
+    // Convert Mongoose docs to objects and filter out any accidental duplicate Company records matching Primary HQ name
+    workspaces = workspaces.map(w => w.toObject()).filter(w => 
+      !tenant || w.companyName.trim().toLowerCase() !== tenant.companyName.trim().toLowerCase()
+    );
 
     if (tenant) {
       // Prepend Main HQ to the list

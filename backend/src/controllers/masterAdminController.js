@@ -47,15 +47,6 @@ exports.onboardAutomated = async (req, res) => {
     });
     await tenant.save();
 
-    // 2. Create Company
-    const company = new Company({
-      tenantId: tenant._id,
-      companyName: companyName,
-      address: 'Update Address',
-      contactNumber: mobileNumber
-    });
-    await company.save();
-
     // 3. Create ADMIN User
     const salt = await bcrypt.genSalt(10);
     const defaultPassword = 'TransitNode@' + new Date().getFullYear();
